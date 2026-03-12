@@ -1,13 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { scrapeUrl } from '@/lib/scraper'
-import { buildBrandProfile } from '@/lib/brand-profiler'
-import { findCompetitorAds } from '@/lib/competitor-research'
-import { generateCampaignAds } from '@/lib/ad-generator'
-import { storeBrandAssets } from '@/lib/asset-storage'
-import { langfuse } from '@/lib/langfuse'
-import type { Json } from '@/types/database'
 
+/**
+ * POST /api/campaigns/create
+ * Creates a campaign record and returns immediately.
+ * Frontend then calls /api/campaigns/[id]/process to do the heavy work.
+ */
 export async function POST(request: NextRequest) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -21,13 +19,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'URL is required', code: 'MISSING_URL' }, { status: 400 })
   }
 
-  const trace = langfuse.trace({
-    name: 'campaign-creation-pipeline-v2',
-    userId: user.id,
-    metadata: { url },
-  })
-
-  // Step 0: Create campaign
   const { data: campaign, error: campaignError } = await supabase
     .from('campaigns')
     .insert({
@@ -47,108 +38,8 @@ export async function POST(request: NextRequest) {
 
   if (campaignError || !campaign) {
     const msg = campaignError?.message || 'Unknown DB error'
-    console.error('[CAMPAIGN_CREATE_FAILED]', msg)
-    trace.update({ metadata: { error: msg, code: 'CAMPAIGN_CREATE_FAILED' } })
-    await langfuse.flushAsync()
     return NextResponse.json({ error: `Failed to create campaign: ${msg}`, code: 'CAMPAIGN_CREATE_FAILED' }, { status: 500 })
   }
 
-  trace.update({ sessionId: campaign.id })
-
-  async function fail(code: string, message: string) {
-    console.error(`[${code}]`, message)
-    await supabase.from('campaigns').update({ status: 'draft' as const }).eq('id', campaign!.id)
-    trace.update({ metadata: { error: message, code } })
-    await langfuse.flushAsync()
-  }
-
-  // Step 1: Scrape
-  let scrape
-  try {
-    scrape = await scrapeUrl(url, trace.id)
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : 'Unknown scraping error'
-    await fail('SCRAPE_FAILED', msg)
-    return NextResponse.json({ error: `Scraping failed for ${url}: ${msg}`, code: 'SCRAPE_FAILED', campaignId: campaign.id }, { status: 500 })
-  }
-
-  // Step 2: Brand profile + ad copy
-  let brandProfile, adCopy
-  try {
-    const result = await buildBrandProfile(scrape, url)
-    brandProfile = result.brandProfile
-    adCopy = result.adCopy
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : 'Unknown profiling error'
-    await fail('PROFILE_FAILED', msg)
-    return NextResponse.json({ error: `Brand profiling failed: ${msg}`, code: 'PROFILE_FAILED', campaignId: campaign.id }, { status: 500 })
-  }
-
-  // Step 3: Competitor research (non-fatal)
-  try {
-    const competitorAds = await findCompetitorAds(
-      brandProfile.category,
-      brandProfile.key_value_props,
-      trace.id
-    )
-    brandProfile.competitor_ad_examples = competitorAds.map(a => a.ad_creative_body || '').filter(Boolean)
-  } catch (err) {
-    console.warn('[COMPETITOR_RESEARCH_FAILED]', err instanceof Error ? err.message : err)
-  }
-
-  // Step 4: Store brand assets in Supabase (download from customer site → our storage)
-  let storedAssets = scrape.brandAssets
-  try {
-    storedAssets = await storeBrandAssets(campaign.id, scrape.brandAssets)
-  } catch (err) {
-    // Non-fatal — we can still generate ads without stored refs, just less reliable
-    console.warn('[ASSET_STORAGE_FAILED]', err instanceof Error ? err.message : err)
-  }
-
-  // Step 5: Save profile + assets + copy
-  try {
-    const { error: updateError } = await supabase
-      .from('campaigns')
-      .update({
-        brand_profile: brandProfile as unknown as Json,
-        brand_assets: storedAssets as unknown as Json,
-        ad_copy: adCopy as unknown as Json,
-        status: 'generating' as const,
-      })
-      .eq('id', campaign.id)
-
-    if (updateError) throw new Error(updateError.message)
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : 'Unknown DB error'
-    await fail('CAMPAIGN_UPDATE_FAILED', msg)
-    return NextResponse.json({ error: `Failed to save brand profile: ${msg}`, code: 'CAMPAIGN_UPDATE_FAILED', campaignId: campaign.id }, { status: 500 })
-  }
-
-  // Step 6: Generate ads (using our stored Supabase URLs as references)
-  try {
-    await generateCampaignAds(campaign.id, brandProfile)
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : 'Unknown generation error'
-    await fail('AD_GENERATION_FAILED', msg)
-    return NextResponse.json({ error: `Ad generation failed: ${msg}`, code: 'AD_GENERATION_FAILED', campaignId: campaign.id }, { status: 500 })
-  }
-
-  // Step 6: Fetch generated ads
-  const { data: ads } = await supabase
-    .from('ads')
-    .select()
-    .eq('campaign_id', campaign.id)
-
-  trace.update({
-    output: { campaignId: campaign.id, product: brandProfile.product_name, adsGenerated: ads?.length },
-  })
-  await langfuse.flushAsync()
-
-  return NextResponse.json({
-    campaignId: campaign.id,
-    brandProfile,
-    adCopy,
-    brandAssets: storedAssets,
-    ads: ads || [],
-  })
+  return NextResponse.json({ campaignId: campaign.id })
 }

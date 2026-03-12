@@ -1,6 +1,6 @@
 'use client'
 
-import { Suspense, useState, useEffect, useRef } from 'react'
+import { Suspense, useState, useEffect, useRef, useCallback } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { UrlForm } from '@/components/onboard/UrlForm'
 import { BrandProfileCard } from '@/components/onboard/BrandProfileCard'
@@ -25,10 +25,47 @@ function OnboardContent() {
   const [adCopy, setAdCopy] = useState<AdCopy | null>(null)
   const [ads, setAds] = useState<Ad[]>([])
   const [error, setError] = useState<string | null>(null)
+  const [statusMessage, setStatusMessage] = useState('Analyzing your site...')
   const searchParams = useSearchParams()
   const autoStarted = useRef(false)
+  const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
-  // Auto-start if URL is provided via query param (from landing page)
+  const pollStatus = useCallback(async (id: string) => {
+    try {
+      const res = await fetch(`/api/campaigns/${id}/status`)
+      if (!res.ok) return
+
+      const data = await res.json()
+
+      if (data.brandProfile && !brandProfile) {
+        setBrandProfile(data.brandProfile)
+        setAdCopy(data.adCopy)
+        setStatusMessage('Generating your video ads...')
+      }
+
+      if (data.status === 'ready' && data.ads?.length > 0) {
+        if (pollingRef.current) clearInterval(pollingRef.current)
+        setBrandProfile(data.brandProfile)
+        setAdCopy(data.adCopy)
+        setAds(data.ads)
+        setStep('preview')
+      } else if (data.status === 'draft') {
+        if (pollingRef.current) clearInterval(pollingRef.current)
+        setError('Campaign generation failed. Please try again.')
+        setStep('url')
+      }
+    } catch {
+      // Network error — keep polling
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [brandProfile])
+
+  useEffect(() => {
+    return () => {
+      if (pollingRef.current) clearInterval(pollingRef.current)
+    }
+  }, [])
+
   useEffect(() => {
     const urlParam = searchParams.get('url')
     if (urlParam && !autoStarted.current) {
@@ -41,25 +78,36 @@ function OnboardContent() {
   async function handleUrlSubmit(url: string) {
     setStep('generating')
     setError(null)
+    setStatusMessage('Analyzing your site...')
+    setBrandProfile(null)
+    setAdCopy(null)
+    setAds([])
 
-    const res = await fetch('/api/campaigns/create', {
+    // Step 1: Create campaign (fast — returns immediately)
+    const createRes = await fetch('/api/campaigns/create', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ url }),
     })
-    const data = await res.json()
+    const createData = await createRes.json()
 
-    if (!res.ok) {
-      setError(`${data.error || 'Failed to analyze URL'}${data.code ? ` [${data.code}]` : ''}`)
+    if (!createRes.ok) {
+      setError(`${createData.error || 'Failed to start campaign'}${createData.code ? ` [${createData.code}]` : ''}`)
       setStep('url')
       return
     }
 
-    setCampaignId(data.campaignId)
-    setBrandProfile(data.brandProfile)
-    setAdCopy(data.adCopy)
-    setAds(data.ads || [])
-    setStep('preview')
+    const id = createData.campaignId
+    setCampaignId(id)
+
+    // Step 2: Start polling for status updates
+    pollingRef.current = setInterval(() => pollStatus(id), 3000)
+
+    // Step 3: Fire off processing (this takes 1-3 minutes)
+    // We don't await this — the polling will pick up when it's done
+    fetch(`/api/campaigns/${id}/process`, { method: 'POST' }).catch(err => {
+      console.error('Process call failed:', err)
+    })
   }
 
   async function handleBudgetSubmit(dailyBudgetCents: number) {
@@ -91,8 +139,14 @@ function OnboardContent() {
       {step === 'generating' && (
         <div className="text-center py-16">
           <div className="inline-block w-10 h-10 border-2 border-t-transparent rounded-full animate-spin mb-4" style={{ borderColor: 'var(--orange)', borderTopColor: 'transparent' }} />
-          <p style={{ fontFamily: 'var(--font-body)', fontSize: '18px', color: 'var(--text)' }}>Analyzing your site & generating ads...</p>
-          <p style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--text-muted)', marginTop: '8px', textTransform: 'uppercase', letterSpacing: '1px' }}>This takes about 60 seconds</p>
+          <p style={{ fontFamily: 'var(--font-body)', fontSize: '18px', color: 'var(--text)' }}>{statusMessage}</p>
+          <p style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--text-muted)', marginTop: '8px', textTransform: 'uppercase', letterSpacing: '1px' }}>This takes 1-2 minutes</p>
+
+          {brandProfile && (
+            <div className="mt-8 text-left max-w-2xl mx-auto">
+              <BrandProfileCard profile={brandProfile} adCopy={adCopy} />
+            </div>
+          )}
         </div>
       )}
 
