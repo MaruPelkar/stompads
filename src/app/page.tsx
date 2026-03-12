@@ -191,12 +191,7 @@ export default function LandingPage() {
         }}>
           <span>STOMP</span><span style={{ color: 'var(--orange)' }}>ADS</span>
         </a>
-        <a href="/signup" style={{
-          fontFamily: 'var(--font-mono)', fontSize: '13px', padding: '10px 24px',
-          background: 'var(--orange)', color: '#fff', border: 'none', cursor: 'pointer',
-          textTransform: 'uppercase', letterSpacing: '1.5px', textDecoration: 'none',
-          transition: 'all 0.3s',
-        }}>Get Started</a>
+        <span />
       </nav>
 
       {/* Hero — everything fits in 100vh */}

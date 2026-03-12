@@ -16,6 +16,10 @@ const geistMono = localFont({
 export const metadata: Metadata = {
   title: "StompAds — Run Ads. Not Headaches.",
   description: "Enter your website. Set a budget. We handle everything else. AI-generated ads on autopilot.",
+  icons: {
+    icon: '/favicon.png',
+    apple: '/favicon.png',
+  },
 };
 
 export default function RootLayout({
