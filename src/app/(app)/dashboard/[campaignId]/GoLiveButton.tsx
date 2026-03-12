@@ -28,7 +28,7 @@ export default function GoLiveButton({ campaignId }: { campaignId: string }) {
     <div className="space-y-2">
       <button onClick={handleGoLive} disabled={loading} className="btn-primary w-full"
         style={{ fontSize: '22px', padding: '18px', letterSpacing: '3px' }}>
-        {loading ? 'LAUNCHING CAMPAIGN...' : 'GO LIVE — GET TRAFFIC'}
+        {loading ? 'LAUNCHING...' : 'GO LIVE'}
       </button>
       {error && <div className="error-box text-center">{error}</div>}
     </div>

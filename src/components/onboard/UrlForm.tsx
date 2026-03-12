@@ -19,9 +19,9 @@ export function UrlForm({ onSubmit, loading }: Props) {
   return (
     <div className="text-center space-y-6">
       <div>
-        <h1 className="heading-xl">ENTER YOUR <span style={{ color: 'var(--orange)' }}>URL</span></h1>
+        <h1 className="heading-xl">DROP YOUR <span style={{ color: 'var(--orange)' }}>URL</span></h1>
         <p className="label" style={{ fontSize: '12px', marginTop: '10px', maxWidth: '400px', marginLeft: 'auto', marginRight: 'auto' }}>
-          We&apos;ll analyze your site and generate video ads automatically.
+          We handle the rest. Ads go live when you say go.
         </p>
       </div>
       <form onSubmit={handleSubmit} className="flex gap-3 max-w-xl mx-auto">
@@ -34,7 +34,7 @@ export function UrlForm({ onSubmit, loading }: Props) {
           className="input flex-1"
         />
         <button type="submit" disabled={loading} className="btn-primary" style={{ whiteSpace: 'nowrap', fontSize: '16px', padding: '14px 28px' }}>
-          {loading ? 'ANALYZING...' : 'ANALYZE'}
+          {loading ? 'ON IT...' : 'GO'}
         </button>
       </form>
     </div>

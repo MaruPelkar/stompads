@@ -23,8 +23,8 @@ export default async function DashboardPage() {
     return (
       <div className="text-center py-20 space-y-6">
         <h1 className="heading-xl">NO CAMPAIGNS YET</h1>
-        <p className="label" style={{ fontSize: '13px' }}>Create your first campaign and get traffic in minutes.</p>
-        <Link href="/onboard" className="btn-primary">CREATE CAMPAIGN</Link>
+        <p className="label" style={{ fontSize: '13px' }}>Drop a URL. Get ads. Get traffic.</p>
+        <Link href="/onboard" className="btn-primary">START NOW</Link>
       </div>
     )
   }

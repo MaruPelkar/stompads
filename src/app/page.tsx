@@ -198,7 +198,7 @@ export default function LandingPage() {
           color: 'var(--text-light)', marginTop: '24px', letterSpacing: '1px',
           textTransform: 'uppercase', position: 'relative', zIndex: 10, maxWidth: '440px',
         }}>
-          Paste your website. We generate video ads and run them on Meta.
+          Paste your URL. We do the rest. Ads go live in minutes.
         </p>
 
         {/* URL Input + Launch — clean, no slider */}
@@ -251,7 +251,7 @@ export default function LandingPage() {
             fontFamily: 'var(--font-mono)', fontSize: '11px',
             color: 'var(--text-muted)', letterSpacing: '0.5px',
           }}>
-            Free to try &middot; No credit card required
+            Free to try. No credit card. No setup.
           </p>
         </div>
       </section>

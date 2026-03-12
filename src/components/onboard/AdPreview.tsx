@@ -11,9 +11,9 @@ export function AdPreview({ ads }: Props) {
 
   return (
     <div className="space-y-4">
-      <h3 className="heading-md">YOUR ADS — <span style={{ color: 'var(--orange)' }}>READY TO LAUNCH</span></h3>
+      <h3 className="heading-md">ADS <span style={{ color: 'var(--orange)' }}>READY</span></h3>
       <p className="label" style={{ fontSize: '11px' }}>
-        {videoAds.length} UGC video ad{videoAds.length !== 1 ? 's' : ''} for Instagram Stories & Reels
+        {videoAds.length} video ad{videoAds.length !== 1 ? 's' : ''} — Instagram Stories & Reels
       </p>
       <div className="grid grid-cols-2 gap-6">
         {videoAds.map((ad, i) => (

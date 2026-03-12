@@ -8,7 +8,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           <Link href="/" style={{ fontFamily: 'var(--font-display)', fontSize: '32px', letterSpacing: '2px', color: 'var(--text)', textDecoration: 'none' }}>
             STOMP<span style={{ color: 'var(--orange)' }}>ADS</span>
           </Link>
-          <p className="label" style={{ marginTop: '6px' }}>Run ads. Not headaches.</p>
+          <p className="label" style={{ marginTop: '6px' }}>Ads on autopilot.</p>
         </div>
         {children}
       </div>

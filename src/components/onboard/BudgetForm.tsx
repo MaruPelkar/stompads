@@ -19,7 +19,7 @@ export function BudgetForm({ onSubmit, loading }: Props) {
   return (
     <div className="card">
       <h3 className="heading-md">SET YOUR <span style={{ color: 'var(--orange)' }}>BUDGET</span></h3>
-      <p className="label" style={{ marginTop: '6px' }}>You&apos;ll be charged for the first day before we launch.</p>
+      <p className="label" style={{ marginTop: '6px' }}>First day charged upfront. Cancel anytime.</p>
       <form onSubmit={handleSubmit} className="flex gap-3 items-end mt-4">
         <div className="flex-1">
           <label className="label">Daily budget (USD)</label>
@@ -33,7 +33,7 @@ export function BudgetForm({ onSubmit, loading }: Props) {
           </div>
         </div>
         <button type="submit" disabled={loading} className="btn-primary" style={{ whiteSpace: 'nowrap', fontSize: '16px', padding: '14px 28px' }}>
-          {loading ? 'PROCESSING...' : 'PAY & LAUNCH'}
+          {loading ? 'PROCESSING...' : 'CONFIRM & LAUNCH'}
         </button>
       </form>
     </div>

@@ -10,12 +10,12 @@ import type { Ad } from '@/types/database'
 type Step = 'url' | 'generating' | 'preview' | 'checkout'
 
 const PROGRESS_STEPS = [
-  { key: 'scrape', label: 'Looking at your website' },
-  { key: 'profile', label: 'Understanding your brand' },
+  { key: 'scrape', label: 'Scanning your website' },
+  { key: 'profile', label: 'Locking in your brand' },
   { key: 'scripts', label: 'Writing ad scripts' },
-  { key: 'video1', label: 'Generating video 1' },
-  { key: 'video2', label: 'Generating video 2' },
-  { key: 'subtitles', label: 'Adding captions' },
+  { key: 'video1', label: 'Producing video 1' },
+  { key: 'video2', label: 'Producing video 2' },
+  { key: 'subtitles', label: 'Burning in captions' },
 ]
 
 export default function OnboardPage() {
@@ -176,8 +176,8 @@ function OnboardContent() {
 
           {/* Brand profile loaded — videos still generating */}
           {hasProfile && (
-            <p style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-muted)', marginTop: '20px', letterSpacing: '0.5px' }}>
-              We understood your brand. Now creating your ads...
+            <p style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text)', marginTop: '20px', letterSpacing: '0.5px', fontWeight: 600 }}>
+              Understood. Creating your ads now.
             </p>
           )}
         </div>
