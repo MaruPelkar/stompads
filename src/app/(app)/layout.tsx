@@ -11,29 +11,25 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     <div className="min-h-screen" style={{ background: 'var(--bg)', color: 'var(--text)' }}>
       <nav style={{
         borderBottom: '1px solid var(--card-border)',
-        padding: '16px 32px',
+        padding: '14px 32px',
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
-        background: 'rgba(255,252,248,0.9)',
-        backdropFilter: 'blur(12px)',
+        background: 'rgba(255,252,248,0.92)',
+        backdropFilter: 'blur(16px)',
       }}>
         <Link href="/dashboard" style={{
-          fontFamily: 'var(--font-display)', fontSize: '24px', letterSpacing: '2px',
+          fontFamily: 'var(--font-display)', fontSize: '22px', letterSpacing: '2px',
           color: 'var(--text)', textDecoration: 'none',
         }}>
           STOMP<span style={{ color: 'var(--orange)' }}>ADS</span>
         </Link>
-        <div style={{ display: 'flex', gap: '20px', alignItems: 'center' }}>
-          <Link href="/dashboard" style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--text-light)', textDecoration: 'none', textTransform: 'uppercase', letterSpacing: '1px' }}>
-            Dashboard
-          </Link>
-          <Link href="/onboard" style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--text-light)', textDecoration: 'none', textTransform: 'uppercase', letterSpacing: '1px' }}>
-            New Campaign
-          </Link>
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          <Link href="/dashboard" className="nav-link">Dashboard</Link>
+          <Link href="/onboard" className="btn-secondary" style={{ fontSize: '11px', padding: '8px 16px' }}>+ New</Link>
         </div>
       </nav>
-      <main style={{ maxWidth: '960px', margin: '0 auto', padding: '40px 24px' }}>
+      <main style={{ maxWidth: '960px', margin: '0 auto', padding: '36px 24px' }}>
         {children}
       </main>
     </div>

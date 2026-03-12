@@ -5,29 +5,26 @@ import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
 const sampleSites = [
-  'https://www.acmecoffee.com',
-  'https://www.freshpetfoods.co',
-  'https://www.novafit.studio',
-  'https://www.sunnyskincare.com',
-  'https://www.urbanbloom.shop',
-  'https://www.craftburger.co',
-  'https://www.zenmatcha.com',
-  'https://www.trailgear.io',
+  'acmecoffee.com',
+  'freshpetfoods.co',
+  'novafit.studio',
+  'sunnyskincare.com',
+  'urbanbloom.shop',
+  'craftburger.co',
+  'zenmatcha.com',
+  'trailgear.io',
 ]
 
 function normalizeUrl(input: string): string {
   let u = input.trim()
   if (!u) return u
-  // Remove any existing protocol prefix to avoid doubling
   u = u.replace(/^(https?:\/\/)+/i, '')
-  // Add https://
   return `https://${u}`
 }
 
 export default function LandingPage() {
   const router = useRouter()
   const [url, setUrl] = useState('')
-  const [budget, setBudget] = useState(50)
   const [typingText, setTypingText] = useState('')
   const [userFocused, setUserFocused] = useState(false)
   const [launching, setLaunching] = useState(false)
@@ -35,7 +32,6 @@ export default function LandingPage() {
   const siteIndexRef = useRef(0)
   const animatingRef = useRef(true)
 
-  // Check if user is logged in
   useEffect(() => {
     const supabase = createClient()
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -43,7 +39,6 @@ export default function LandingPage() {
     })
   }, [])
 
-  // Typing animation
   useEffect(() => {
     if (userFocused) return
     let cancelled = false
@@ -91,16 +86,13 @@ export default function LandingPage() {
     const trimmed = url.trim()
 
     if (trimmed) {
-      // User has a URL — normalize and go to onboard with it
       const normalized = normalizeUrl(trimmed)
       if (isLoggedIn) {
         router.push(`/onboard?url=${encodeURIComponent(normalized)}`)
       } else {
-        // Save URL, send to signup, they'll get redirected to onboard after
         router.push(`/signup?redirect=${encodeURIComponent(`/onboard?url=${encodeURIComponent(normalized)}`)}`)
       }
     } else {
-      // No URL — just take them to login/signup → new campaign
       if (isLoggedIn) {
         router.push('/onboard')
       } else {
@@ -116,30 +108,26 @@ export default function LandingPage() {
     }
   }
 
-  const sliderPercent = ((budget - 5) / (500 - 5)) * 100
-
   return (
     <>
       {/* Nav */}
       <nav style={{
         position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100,
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '22px 48px', borderBottom: '1px solid rgba(0,0,0,0.06)',
+        padding: '18px 40px', borderBottom: '1px solid rgba(0,0,0,0.06)',
         background: 'rgba(255,252,248,0.88)', backdropFilter: 'blur(20px)',
         WebkitBackdropFilter: 'blur(20px)',
       }}>
-        <a href="#" style={{
-          fontFamily: 'var(--font-display)', fontSize: '28px', letterSpacing: '2px',
-          color: 'var(--text)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '2px',
+        <a href="/" style={{
+          fontFamily: 'var(--font-display)', fontSize: '26px', letterSpacing: '2px',
+          color: 'var(--text)', textDecoration: 'none',
         }}>
-          <span>STOMP</span><span style={{ color: 'var(--orange)' }}>ADS</span>
+          STOMP<span style={{ color: 'var(--orange)' }}>ADS</span>
         </a>
-        {isLoggedIn && (
-          <a href="/dashboard" style={{
-            fontFamily: 'var(--font-mono)', fontSize: '12px', padding: '8px 20px',
-            background: 'var(--orange)', color: '#fff', textDecoration: 'none',
-            textTransform: 'uppercase', letterSpacing: '1.5px', transition: 'all 0.3s',
-          }}>Dashboard</a>
+        {isLoggedIn ? (
+          <a href="/dashboard" className="btn-secondary">Dashboard</a>
+        ) : (
+          <a href="/login" className="nav-link">Log in</a>
         )}
       </nav>
 
@@ -147,7 +135,7 @@ export default function LandingPage() {
       <section style={{
         height: '100vh', display: 'flex', flexDirection: 'column',
         alignItems: 'center', justifyContent: 'center', textAlign: 'center',
-        position: 'relative', padding: '80px 24px 40px', overflow: 'hidden',
+        position: 'relative', padding: '80px 24px 60px', overflow: 'hidden',
       }}>
 
         {/* Floating Ad Cards */}
@@ -160,11 +148,9 @@ export default function LandingPage() {
           { src: '/samples/ad3.png', badge: 'Stories', isVideo: false, cls: 'hide-mobile', style: { top: '35%', right: '0%', width: 115, height: 155, transform: 'rotate(-3deg)', animation: 'floatIn 1s 0.7s ease-out forwards, drift3 9.5s ease-in-out 1.7s infinite' } },
         ].map((ad, i) => (
           <div key={i} className={`floating-ad ${ad.cls}`} style={{
-            position: 'absolute', borderRadius: '14px', overflow: 'hidden',
-            boxShadow: '0 8px 32px rgba(0,0,0,0.07), 0 2px 8px rgba(0,0,0,0.04)',
-            pointerEvents: 'none', zIndex: 2, opacity: 0,
-            border: '1px solid rgba(0,0,0,0.06)',
-            ...ad.style,
+            position: 'absolute', borderRadius: 'var(--radius-lg)', overflow: 'hidden',
+            boxShadow: 'var(--shadow-lg)', pointerEvents: 'none', zIndex: 2, opacity: 0,
+            border: '1px solid rgba(0,0,0,0.06)', ...ad.style,
           }}>
             {ad.isVideo ? (
               <video src={ad.src} autoPlay muted loop playsInline style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -185,9 +171,9 @@ export default function LandingPage() {
             <span style={{
               position: 'absolute', bottom: 6, left: 6,
               fontFamily: 'var(--font-mono)', fontSize: '8px', textTransform: 'uppercase',
-              letterSpacing: '1.5px', background: 'rgba(255,255,255,0.9)',
+              letterSpacing: '1.5px', background: 'rgba(255,255,255,0.92)',
               backdropFilter: 'blur(8px)', color: 'var(--text)',
-              padding: '3px 8px', borderRadius: '3px', border: '1px solid rgba(0,0,0,0.06)',
+              padding: '3px 8px', borderRadius: 'var(--radius-sm)', border: '1px solid rgba(0,0,0,0.06)',
             }}>{ad.badge}</span>
           </div>
         ))}
@@ -195,33 +181,32 @@ export default function LandingPage() {
         {/* Headline */}
         <h1 style={{
           fontFamily: 'var(--font-display)',
-          fontSize: 'clamp(56px, 10vw, 130px)',
-          lineHeight: 0.92, letterSpacing: '-1px',
+          fontSize: 'clamp(60px, 11vw, 140px)',
+          lineHeight: 0.9, letterSpacing: '-1px',
           color: 'var(--text)', position: 'relative', zIndex: 10,
           margin: 0,
         }}>
           <span style={{ color: 'var(--orange)' }}>RUN ADS.</span>
           <span style={{
-            fontSize: '0.45em', color: 'var(--text)', letterSpacing: '2px',
-            display: 'block', marginTop: '4px',
+            fontSize: '0.42em', color: 'var(--text)', letterSpacing: '2px',
+            display: 'block', marginTop: '6px',
           }}>NOT HEADACHES.</span>
         </h1>
 
         <p style={{
           fontFamily: 'var(--font-mono)', fontSize: 'clamp(11px, 1.2vw, 14px)',
-          color: 'var(--text-light)', marginTop: '20px', letterSpacing: '1px',
-          textTransform: 'uppercase', position: 'relative', zIndex: 10, maxWidth: '460px',
+          color: 'var(--text-light)', marginTop: '24px', letterSpacing: '1px',
+          textTransform: 'uppercase', position: 'relative', zIndex: 10, maxWidth: '440px',
         }}>
-          Enter your website. Set a budget. We handle everything else.
+          Paste your website. We generate video ads and run them on Meta.
         </p>
 
-        {/* Input Group */}
+        {/* URL Input + Launch — clean, no slider */}
         <div style={{
-          marginTop: '28px', display: 'flex', flexDirection: 'column',
-          alignItems: 'center', gap: '14px', position: 'relative', zIndex: 10,
-          width: '100%', maxWidth: '480px',
+          marginTop: '36px', display: 'flex', flexDirection: 'column',
+          alignItems: 'center', gap: '16px', position: 'relative', zIndex: 10,
+          width: '100%', maxWidth: '460px',
         }}>
-          {/* URL Input */}
           <div style={{ width: '100%', position: 'relative' }}>
             <input
               id="urlInput"
@@ -233,20 +218,15 @@ export default function LandingPage() {
               onKeyDown={handleKeyDown}
               autoComplete="off"
               spellCheck={false}
-              style={{
-                width: '100%', padding: '14px 20px', background: 'var(--input-bg)',
-                border: '1px solid var(--input-border)', color: 'var(--text)',
-                fontFamily: 'var(--font-mono)', fontSize: '14px', outline: 'none',
-                letterSpacing: '0.5px', caretColor: 'var(--orange)',
-                transition: 'border-color 0.3s, box-shadow 0.3s',
-              }}
+              className="input"
+              style={{ fontSize: '15px', padding: '16px 20px' }}
             />
             {!userFocused && (
               <div style={{
                 position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
                 display: 'flex', alignItems: 'center', padding: '0 20px',
                 pointerEvents: 'none', fontFamily: 'var(--font-mono)',
-                fontSize: '14px', color: 'var(--text-muted)', letterSpacing: '0.5px',
+                fontSize: '15px', color: 'var(--text-muted)', letterSpacing: '0.5px',
                 overflow: 'hidden',
               }}>
                 <span style={{
@@ -258,66 +238,34 @@ export default function LandingPage() {
             )}
           </div>
 
-          {/* Budget Slider */}
-          <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
-            <span style={{
-              fontFamily: 'var(--font-mono)', fontSize: '11px', textTransform: 'uppercase',
-              letterSpacing: '2px', color: 'var(--text-light)',
-            }}>Daily Budget</span>
-            <span style={{
-              fontFamily: 'var(--font-display)', fontSize: '36px',
-              color: 'var(--orange)', letterSpacing: '2px', lineHeight: 1,
-            }}>${budget}</span>
-            <div style={{ width: '100%', position: 'relative', height: '40px', display: 'flex', alignItems: 'center' }}>
-              <input
-                type="range"
-                min={5}
-                max={500}
-                step={5}
-                value={budget}
-                onChange={(e) => setBudget(Number(e.target.value))}
-                style={{
-                  WebkitAppearance: 'none', appearance: 'none',
-                  width: '100%', height: '4px', outline: 'none', cursor: 'pointer',
-                  background: `linear-gradient(to right, var(--orange) 0%, var(--orange) ${sliderPercent}%, var(--slider-track) ${sliderPercent}%, var(--slider-track) 100%)`,
-                }}
-              />
-            </div>
-            <div style={{
-              display: 'flex', justifyContent: 'space-between', width: '100%',
-              fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--text-muted)',
-              letterSpacing: '1px', marginTop: '-4px',
-            }}>
-              <span>$5/day</span>
-              <span>$500/day</span>
-            </div>
-          </div>
-
-          {/* Launch Button */}
           <button
             onClick={handleLaunch}
             disabled={launching}
-            style={{
-              fontFamily: 'var(--font-display)', fontSize: '20px', letterSpacing: '3px',
-              padding: '16px 56px', background: launching ? 'var(--green)' : 'var(--orange)',
-              color: '#fff', border: 'none', cursor: launching ? 'wait' : 'pointer',
-              textTransform: 'uppercase', transition: 'all 0.3s',
-              boxShadow: '0 4px 24px rgba(255, 77, 0, 0.25)', marginTop: '4px',
-              position: 'relative', zIndex: 10,
-            }}
+            className="btn-primary"
+            style={{ width: '100%', fontSize: '22px', padding: '18px', letterSpacing: '3px' }}
           >
-            {launching ? '⚡ LAUNCHING...' : 'LAUNCH MY ADS'}
+            {launching ? 'LAUNCHING...' : 'LAUNCH MY ADS'}
           </button>
+
+          <p style={{
+            fontFamily: 'var(--font-mono)', fontSize: '11px',
+            color: 'var(--text-muted)', letterSpacing: '0.5px',
+          }}>
+            Free to try &middot; No credit card required
+          </p>
         </div>
       </section>
 
       {/* Footer */}
       <footer style={{
-        padding: '40px 48px', borderTop: '1px solid rgba(0,0,0,0.06)',
-        textAlign: 'center', fontFamily: 'var(--font-mono)', fontSize: '12px',
+        padding: '32px 48px', borderTop: '1px solid rgba(0,0,0,0.06)',
+        textAlign: 'center', fontFamily: 'var(--font-mono)', fontSize: '11px',
         color: 'var(--text-muted)', letterSpacing: '1px',
+        display: 'flex', justifyContent: 'center', gap: '24px',
       }}>
-        &copy; 2026 StompAds. All rights reserved.
+        <span>&copy; 2026 StompAds</span>
+        <a href="/privacy" style={{ color: 'var(--text-muted)', textDecoration: 'none' }}>Privacy</a>
+        <a href="/terms" style={{ color: 'var(--text-muted)', textDecoration: 'none' }}>Terms</a>
       </footer>
     </>
   )

@@ -5,10 +5,10 @@ import { MetricsBadge } from '@/components/dashboard/MetricsBadge'
 import type { BrandProfile, Metrics } from '@/types/database'
 import GoLiveButton from './GoLiveButton'
 
-function statusStyle(status: string) {
-  if (status === 'live') return { background: 'var(--green-soft)', color: 'var(--green)' }
-  if (status === 'ready') return { background: 'var(--orange-soft)', color: 'var(--orange)' }
-  return { background: 'var(--input-bg)', color: 'var(--text-muted)' }
+function badgeClass(status: string) {
+  if (status === 'live') return 'badge badge-live'
+  if (status === 'ready') return 'badge badge-ready'
+  return 'badge badge-default'
 }
 
 export default async function CampaignPage({ params }: { params: { campaignId: string } }) {
@@ -52,25 +52,13 @@ export default async function CampaignPage({ params }: { params: { campaignId: s
   return (
     <div className="space-y-8">
       <div>
-        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '32px', letterSpacing: '1px', color: 'var(--text)' }}>
-          {brandProfile?.product_name || campaign.url}
-        </h1>
-        <p style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>{campaign.url}</p>
-        <span style={{
-          display: 'inline-block', marginTop: '8px',
-          fontSize: '10px', fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: '1px',
-          padding: '4px 10px', borderRadius: '4px',
-          ...statusStyle(campaign.status),
-        }}>
-          {campaign.status}
-        </span>
+        <h1 className="heading-lg">{brandProfile?.product_name || campaign.url}</h1>
+        <p style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--text-muted)', marginTop: '6px' }}>{campaign.url}</p>
+        <span className={`${badgeClass(campaign.status)}`} style={{ marginTop: '10px' }}>{campaign.status}</span>
       </div>
 
       <div className="grid grid-cols-3 gap-4">
-        <MetricsBadge
-          label="Daily Budget"
-          value={`$${((campaign.daily_budget || 0) / 100).toFixed(0)}/day`}
-        />
+        <MetricsBadge label="Daily Budget" value={`$${((campaign.daily_budget || 0) / 100).toFixed(0)}/day`} />
         <MetricsBadge label="Total Spend" value={`$${totalSpend.toFixed(2)}`} />
         <MetricsBadge label="Total Clicks" value={totalClicks.toLocaleString()} />
       </div>
@@ -80,14 +68,10 @@ export default async function CampaignPage({ params }: { params: { campaignId: s
       )}
 
       <div>
-        <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '22px', letterSpacing: '1px', color: 'var(--text)', marginBottom: '16px' }}>YOUR ADS</h2>
+        <h2 className="heading-md" style={{ marginBottom: '16px' }}>YOUR ADS</h2>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
           {(ads || []).map(ad => (
-            <AdCard
-              key={ad.id}
-              ad={ad}
-              metrics={latestMetrics.get(ad.id) ?? undefined}
-            />
+            <AdCard key={ad.id} ad={ad} metrics={latestMetrics.get(ad.id) ?? undefined} />
           ))}
         </div>
       </div>

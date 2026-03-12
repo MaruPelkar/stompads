@@ -2,10 +2,10 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 
-function statusStyle(status: string) {
-  if (status === 'live') return { background: 'var(--green-soft)', color: 'var(--green)' }
-  if (status === 'ready') return { background: 'var(--orange-soft)', color: 'var(--orange)' }
-  return { background: 'var(--input-bg)', color: 'var(--text-muted)' }
+function badgeClass(status: string) {
+  if (status === 'live') return 'badge badge-live'
+  if (status === 'ready') return 'badge badge-ready'
+  return 'badge badge-default'
 }
 
 export default async function DashboardPage() {
@@ -22,15 +22,9 @@ export default async function DashboardPage() {
   if (!campaigns || campaigns.length === 0) {
     return (
       <div className="text-center py-20 space-y-6">
-        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '48px', letterSpacing: '1px', color: 'var(--text)' }}>NO CAMPAIGNS YET</h1>
-        <p style={{ fontFamily: 'var(--font-mono)', fontSize: '13px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px' }}>Create your first campaign and get traffic in minutes.</p>
-        <Link
-          href="/onboard"
-          className="inline-block px-8 py-3 transition"
-          style={{ background: 'var(--orange)', color: '#fff', fontFamily: 'var(--font-display)', fontSize: '18px', letterSpacing: '2px', textTransform: 'uppercase', textDecoration: 'none' }}
-        >
-          CREATE CAMPAIGN
-        </Link>
+        <h1 className="heading-xl">NO CAMPAIGNS YET</h1>
+        <p className="label" style={{ fontSize: '13px' }}>Create your first campaign and get traffic in minutes.</p>
+        <Link href="/onboard" className="btn-primary">CREATE CAMPAIGN</Link>
       </div>
     )
   }
@@ -38,14 +32,8 @@ export default async function DashboardPage() {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '32px', letterSpacing: '1px', color: 'var(--text)' }}>YOUR CAMPAIGNS</h1>
-        <Link
-          href="/onboard"
-          className="px-4 py-2 transition"
-          style={{ background: 'var(--orange)', color: '#fff', fontFamily: 'var(--font-mono)', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '1.5px', textDecoration: 'none' }}
-        >
-          + New campaign
-        </Link>
+        <h1 className="heading-lg">YOUR CAMPAIGNS</h1>
+        <Link href="/onboard" className="btn-secondary">+ New campaign</Link>
       </div>
 
       <div className="space-y-3">
@@ -53,23 +41,17 @@ export default async function DashboardPage() {
           <Link
             key={campaign.id}
             href={`/dashboard/${campaign.id}`}
-            className="block transition"
-            style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: '8px', padding: '20px', textDecoration: 'none' }}
+            className="card card-hover block"
+            style={{ textDecoration: 'none' }}
           >
             <div className="flex justify-between items-start">
               <div>
-                <p style={{ fontWeight: 600, color: 'var(--text)' }}>{campaign.url}</p>
+                <p style={{ fontWeight: 600, color: 'var(--text)', fontSize: '15px' }}>{campaign.url}</p>
                 <p style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>
                   ${((campaign.daily_budget || 0) / 100).toFixed(0)}/day
                 </p>
               </div>
-              <span style={{
-                fontSize: '10px', fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: '1px',
-                padding: '4px 10px', borderRadius: '4px',
-                ...statusStyle(campaign.status),
-              }}>
-                {campaign.status}
-              </span>
+              <span className={badgeClass(campaign.status)}>{campaign.status}</span>
             </div>
           </Link>
         ))}

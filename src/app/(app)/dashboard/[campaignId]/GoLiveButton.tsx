@@ -26,25 +26,11 @@ export default function GoLiveButton({ campaignId }: { campaignId: string }) {
 
   return (
     <div className="space-y-2">
-      <button
-        onClick={handleGoLive}
-        disabled={loading}
-        className="w-full py-4 text-lg transition disabled:opacity-50"
-        style={{
-          background: 'var(--orange)',
-          color: '#fff',
-          fontFamily: 'var(--font-display)',
-          fontSize: '22px',
-          letterSpacing: '3px',
-          textTransform: 'uppercase',
-          border: 'none',
-          cursor: loading ? 'wait' : 'pointer',
-          boxShadow: '0 4px 24px rgba(255, 77, 0, 0.25)',
-        }}
-      >
+      <button onClick={handleGoLive} disabled={loading} className="btn-primary w-full"
+        style={{ fontSize: '22px', padding: '18px', letterSpacing: '3px' }}>
         {loading ? 'LAUNCHING CAMPAIGN...' : 'GO LIVE — GET TRAFFIC'}
       </button>
-      {error && <p style={{ color: 'var(--red)', fontFamily: 'var(--font-mono)', fontSize: '12px', textAlign: 'center' }}>{error}</p>}
+      {error && <div className="error-box text-center">{error}</div>}
     </div>
   )
 }

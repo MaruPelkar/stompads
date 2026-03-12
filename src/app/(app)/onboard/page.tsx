@@ -10,6 +10,15 @@ import type { BrandProfile, Ad, AdCopy } from '@/types/database'
 
 type Step = 'url' | 'generating' | 'preview' | 'checkout'
 
+const PROGRESS_STEPS = [
+  { key: 'scrape', label: 'Scraping your website' },
+  { key: 'profile', label: 'Building brand profile' },
+  { key: 'scripts', label: 'Writing ad scripts' },
+  { key: 'video1', label: 'Generating video 1' },
+  { key: 'video2', label: 'Generating video 2' },
+  { key: 'subtitles', label: 'Adding captions' },
+]
+
 export default function OnboardPage() {
   return (
     <Suspense>
@@ -25,10 +34,11 @@ function OnboardContent() {
   const [adCopy, setAdCopy] = useState<AdCopy | null>(null)
   const [ads, setAds] = useState<Ad[]>([])
   const [error, setError] = useState<string | null>(null)
-  const [statusMessage, setStatusMessage] = useState('Analyzing your site...')
+  const [progressIndex, setProgressIndex] = useState(0)
   const searchParams = useSearchParams()
   const autoStarted = useRef(false)
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const progressRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   const pollStatus = useCallback(async (id: string) => {
     try {
@@ -40,22 +50,24 @@ function OnboardContent() {
       if (data.brandProfile && !brandProfile) {
         setBrandProfile(data.brandProfile)
         setAdCopy(data.adCopy)
-        setStatusMessage('Generating your video ads...')
+        setProgressIndex(3) // Jump to "Generating video 1"
       }
 
       if (data.status === 'ready' && data.ads?.length > 0) {
         if (pollingRef.current) clearInterval(pollingRef.current)
+        if (progressRef.current) clearInterval(progressRef.current)
         setBrandProfile(data.brandProfile)
         setAdCopy(data.adCopy)
         setAds(data.ads)
         setStep('preview')
       } else if (data.status === 'draft') {
         if (pollingRef.current) clearInterval(pollingRef.current)
+        if (progressRef.current) clearInterval(progressRef.current)
         setError('Campaign generation failed. Please try again.')
         setStep('url')
       }
     } catch {
-      // Network error — keep polling
+      // Keep polling
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [brandProfile])
@@ -63,6 +75,7 @@ function OnboardContent() {
   useEffect(() => {
     return () => {
       if (pollingRef.current) clearInterval(pollingRef.current)
+      if (progressRef.current) clearInterval(progressRef.current)
     }
   }, [])
 
@@ -78,12 +91,16 @@ function OnboardContent() {
   async function handleUrlSubmit(url: string) {
     setStep('generating')
     setError(null)
-    setStatusMessage('Analyzing your site...')
+    setProgressIndex(0)
     setBrandProfile(null)
     setAdCopy(null)
     setAds([])
 
-    // Step 1: Create campaign (fast — returns immediately)
+    // Simulate progress through steps (actual progress comes from polling)
+    progressRef.current = setInterval(() => {
+      setProgressIndex(prev => prev < PROGRESS_STEPS.length - 1 ? prev + 1 : prev)
+    }, 12000) // Advance every 12s
+
     const createRes = await fetch('/api/campaigns/create', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -92,6 +109,7 @@ function OnboardContent() {
     const createData = await createRes.json()
 
     if (!createRes.ok) {
+      if (progressRef.current) clearInterval(progressRef.current)
       setError(`${createData.error || 'Failed to start campaign'}${createData.code ? ` [${createData.code}]` : ''}`)
       setStep('url')
       return
@@ -99,12 +117,8 @@ function OnboardContent() {
 
     const id = createData.campaignId
     setCampaignId(id)
-
-    // Step 2: Start polling for status updates
     pollingRef.current = setInterval(() => pollStatus(id), 3000)
 
-    // Step 3: Fire off processing (this takes 1-3 minutes)
-    // We don't await this — the polling will pick up when it's done
     fetch(`/api/campaigns/${id}/process`, { method: 'POST' }).catch(err => {
       console.error('Process call failed:', err)
     })
@@ -137,11 +151,36 @@ function OnboardContent() {
       )}
 
       {step === 'generating' && (
-        <div className="text-center py-16">
-          <div className="inline-block w-10 h-10 border-2 border-t-transparent rounded-full animate-spin mb-4" style={{ borderColor: 'var(--orange)', borderTopColor: 'transparent' }} />
-          <p style={{ fontFamily: 'var(--font-body)', fontSize: '18px', color: 'var(--text)' }}>{statusMessage}</p>
-          <p style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--text-muted)', marginTop: '8px', textTransform: 'uppercase', letterSpacing: '1px' }}>This takes 1-2 minutes</p>
+        <div className="text-center py-12">
+          <div className="spinner mb-6" />
 
+          {/* Progress steps */}
+          <div style={{ maxWidth: '320px', margin: '0 auto', textAlign: 'left' }}>
+            {PROGRESS_STEPS.map((s, i) => (
+              <div key={s.key} className="flex items-center gap-3" style={{ padding: '8px 0' }}>
+                <div style={{
+                  width: 20, height: 20, borderRadius: '50%', flexShrink: 0,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: '11px', fontWeight: 700,
+                  background: i < progressIndex ? 'var(--green)' : i === progressIndex ? 'var(--orange)' : 'var(--input-bg)',
+                  color: i <= progressIndex ? '#fff' : 'var(--text-muted)',
+                  transition: 'all 400ms ease',
+                }}>
+                  {i < progressIndex ? '✓' : ''}
+                </div>
+                <span style={{
+                  fontFamily: 'var(--font-mono)', fontSize: '12px', letterSpacing: '0.5px',
+                  color: i <= progressIndex ? 'var(--text)' : 'var(--text-muted)',
+                  fontWeight: i === progressIndex ? 600 : 400,
+                  transition: 'all 400ms ease',
+                }}>
+                  {s.label}{i === progressIndex ? '...' : ''}
+                </span>
+              </div>
+            ))}
+          </div>
+
+          {/* Show brand profile early */}
           {brandProfile && (
             <div className="mt-8 text-left max-w-2xl mx-auto">
               <BrandProfileCard profile={brandProfile} adCopy={adCopy} />
@@ -160,16 +199,12 @@ function OnboardContent() {
 
       {step === 'checkout' && (
         <div className="text-center py-16">
-          <div className="inline-block w-10 h-10 border-2 border-t-transparent rounded-full animate-spin mb-4" style={{ borderColor: 'var(--green)', borderTopColor: 'transparent' }} />
+          <div className="spinner mb-4" style={{ borderColor: 'var(--green)', borderTopColor: 'transparent' }} />
           <p style={{ fontFamily: 'var(--font-body)', fontSize: '18px', color: 'var(--text)' }}>Redirecting to payment...</p>
         </div>
       )}
 
-      {error && (
-        <div style={{ background: 'var(--red-soft)', border: '1px solid var(--red)', borderRadius: '6px', padding: '12px 16px', color: 'var(--red)', fontFamily: 'var(--font-mono)', fontSize: '12px' }}>
-          {error}
-        </div>
-      )}
+      {error && <div className="error-box">{error}</div>}
     </div>
   )
 }
