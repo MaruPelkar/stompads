@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { scrapeUrl } from '@/lib/scraper'
 import { buildBrandProfile } from '@/lib/brand-profiler'
 import { findCompetitorAds } from '@/lib/competitor-research'
+import { generateCampaignAds } from '@/lib/ad-generator'
 import { langfuse } from '@/lib/langfuse'
 import type { Json } from '@/types/database'
 
@@ -19,14 +20,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'URL is required' }, { status: 400 })
   }
 
-  // Create a single trace for the entire campaign creation pipeline
   const trace = langfuse.trace({
-    name: 'campaign-creation-pipeline',
+    name: 'campaign-creation-pipeline-v2',
     userId: user.id,
     metadata: { url },
   })
 
-  // Create campaign in generating state
   const { data: campaign, error: campaignError } = await supabase
     .from('campaigns')
     .insert({
@@ -34,6 +33,8 @@ export async function POST(request: NextRequest) {
       url,
       status: 'generating' as const,
       brand_profile: null,
+      brand_assets: null,
+      ad_copy: null,
       daily_budget: null,
       meta_campaign_id: null,
       meta_adset_id: null,
@@ -51,12 +52,13 @@ export async function POST(request: NextRequest) {
   trace.update({ sessionId: campaign.id })
 
   try {
-    // Scrape and profile — pass trace ID so child spans nest under this trace
+    // 1. Scrape site + extract brand assets
     const scrape = await scrapeUrl(url, trace.id)
-    const brandProfile = await buildBrandProfile(scrape, url)
-    // brandProfile trace is standalone but linked via timing
 
-    // Competitor research (non-fatal if it fails)
+    // 2. Build brand profile + generate ad copy
+    const { brandProfile, adCopy } = await buildBrandProfile(scrape, url)
+
+    // 3. Competitor research (non-fatal)
     const competitorAds = await findCompetitorAds(
       brandProfile.category,
       brandProfile.key_value_props,
@@ -64,21 +66,38 @@ export async function POST(request: NextRequest) {
     )
     brandProfile.competitor_ad_examples = competitorAds.map(a => a.ad_creative_body || '').filter(Boolean)
 
-    // Update campaign with brand profile
+    // 4. Save profile + assets + copy to campaign
     await supabase
       .from('campaigns')
       .update({
         brand_profile: brandProfile as unknown as Json,
-        status: 'preview_ready' as const,
+        brand_assets: scrape.brandAssets as unknown as Json,
+        ad_copy: adCopy as unknown as Json,
+        status: 'generating' as const,
       })
       .eq('id', campaign.id)
 
+    // 5. Generate all 3 ads (marks campaign as 'ready' when done)
+    await generateCampaignAds(campaign.id, brandProfile, scrape.brandAssets)
+
+    // 6. Fetch generated ads to return to client
+    const { data: ads } = await supabase
+      .from('ads')
+      .select()
+      .eq('campaign_id', campaign.id)
+
     trace.update({
-      output: { campaignId: campaign.id, category: brandProfile.category, product: brandProfile.product_name },
+      output: { campaignId: campaign.id, product: brandProfile.product_name, adsGenerated: ads?.length },
     })
     await langfuse.flushAsync()
 
-    return NextResponse.json({ campaignId: campaign.id, brandProfile })
+    return NextResponse.json({
+      campaignId: campaign.id,
+      brandProfile,
+      adCopy,
+      brandAssets: scrape.brandAssets,
+      ads: ads || [],
+    })
   } catch (err) {
     await supabase
       .from('campaigns')
