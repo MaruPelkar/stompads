@@ -114,7 +114,7 @@ export async function generateVideoAd(
     const result = await fal.subscribe(FAL_VIDEO_MODEL, {
       input: {
         prompt,
-        duration: '12' as const, // SDK types expect string literal "4"|"8"|"12"
+        duration: 12 as unknown as '12', // API expects number, SDK types expect string — cast to satisfy both
         aspect_ratio: '9:16',
         resolution: '720p',
       },
