@@ -91,57 +91,61 @@ const VIDEO_SETTINGS = [
   'walking on a busy city street heading to the office, talking into selfie camera',
   'standing in front of their wardrobe mirror in a well-lit bedroom, talking into phone camera',
   'sitting at a cafe table with a laptop and coffee, leaning into the phone camera',
+  'sitting on a park bench in golden hour light, casually talking into phone camera',
+  'leaning against a kitchen counter at home, talking into phone propped up on the counter',
 ]
 
-const VIDEO_HOOKS = [
-  "You would NOT believe what I just found...",
-  "Okay this has GOT to be the biggest catch of 2026...",
-  "Stop scrolling. I need to tell you about this...",
-  "I was today years old when I discovered this...",
-  "Why did nobody tell me about this sooner...",
-]
+const UGC_COPYWRITER_SYSTEM = `You are an expert UGC ad copywriter who specializes in writing viral hook scripts for social media video ads.
+
+You understand:
+- HOOK PSYCHOLOGY: The first 2 seconds decide if someone stops scrolling. You use curiosity gaps ("you won't believe..."), pattern interrupts ("stop scrolling"), urgency ("before they take this down"), FOMO ("everyone's talking about this"), and contrarian takes ("I was wrong about...").
+- FIRST PERSON POV: You write as if the person genuinely discovered something amazing and is breathlessly telling their best friend about it. Never salesy. Never corporate. Always authentic.
+- PRODUCT VIRTUE HIGHLIGHTING: You find the ONE most compelling benefit and make it feel life-changing. You don't list features — you paint a picture of the transformation.
+- NATURAL SPEECH: Real people use filler words, pauses, emphasis, and incomplete sentences. "Like, honestly?" "And here's the thing —" "I'm not even kidding." Your scripts sound like they were never written.
+- URGENCY WITHOUT BEING PUSHY: Soft CTAs work best. "Just try it." "Thank me later." "Link in bio, don't sleep on this." Never "BUY NOW" energy.
+
+Your scripts are 40-50 words (12 seconds of natural speech). Every word earns its place.`
 
 export async function generateVideoScripts(brandProfile: BrandProfile): Promise<{ script: string; setting: string }[]> {
   const trace = langfuse.trace({ name: 'generate-video-scripts' })
 
-  // Pick 2 random settings and 2 random hooks (no duplicates)
   const shuffledSettings = [...VIDEO_SETTINGS].sort(() => Math.random() - 0.5).slice(0, 2)
-  const shuffledHooks = [...VIDEO_HOOKS].sort(() => Math.random() - 0.5).slice(0, 2)
-
   const scripts: { script: string; setting: string }[] = []
 
   for (let i = 0; i < 2; i++) {
     const setting = shuffledSettings[i]
-    const hook = shuffledHooks[i]
 
-    const prompt = `Write a 12-second UGC-style video ad script. The person is ${setting}.
+    const prompt = `Write a 12-second UGC video ad script for this product. The person is ${setting}.
 
-Product: ${brandProfile.product_name}
-Category: ${brandProfile.category}
-Target audience: ${brandProfile.target_audience}
-Key benefits: ${brandProfile.key_value_props.join(', ')}
-Tone: ${brandProfile.tone}
+PRODUCT: ${brandProfile.product_name}
+CATEGORY: ${brandProfile.category}
+TARGET AUDIENCE: ${brandProfile.target_audience}
+KEY BENEFITS: ${brandProfile.key_value_props.join(', ')}
+TONE: ${brandProfile.tone}
 
-The script MUST:
-- Start with this exact hook: "${hook}"
-- Be spoken by an attractive, relatable person directly into camera
-- Sound completely natural, like texting a friend about a discovery
-- Mention the product name "${brandProfile.product_name}" and one specific benefit
-- End with a soft CTA like "just try it" or "thank me later" or "link in bio"
-- Be exactly 40-50 words (12 seconds of natural speech)
-- Include natural pauses and emphasis (the way real people talk)
+Requirements:
+- Open with a killer hook that stops the scroll (first 2 seconds are everything)
+- First person POV — "I" not "you", like sharing a personal discovery
+- Mention "${brandProfile.product_name}" naturally, not forced
+- Highlight ONE specific benefit that feels transformative
+- End with a soft CTA (e.g. "just try it", "thank me later", "link in bio")
+- Exactly 40-50 words total
+- Sound like a real person, not a script
 
-Return ONLY the script text. No stage directions, no quotes, no brackets.`
+${i === 0 ? 'Use a CURIOSITY/DISBELIEF hook style (e.g. "You would not believe what I just found..." or "Okay I need someone to explain why nobody told me about this...")' : 'Use an URGENCY/FOMO hook style (e.g. "This has got to be the biggest catch of 2026..." or "Stop scrolling because this is about to change everything...")'}
+
+Return ONLY the spoken words. No stage directions. No quotes. No brackets. Just what they say.`
 
     const generation = trace.generation({
-      name: `claude-video-script-${i + 1}`,
+      name: `claude-ugc-script-${i + 1}`,
       model: 'claude-sonnet-4-6',
-      input: [{ role: 'user', content: prompt }],
+      input: [{ role: 'system', content: UGC_COPYWRITER_SYSTEM }, { role: 'user', content: prompt }],
     })
 
     const message = await anthropic.messages.create({
       model: 'claude-sonnet-4-6',
       max_tokens: 256,
+      system: UGC_COPYWRITER_SYSTEM,
       messages: [{ role: 'user', content: prompt }],
     })
 

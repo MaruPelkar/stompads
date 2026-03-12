@@ -7,21 +7,18 @@ import { langfuse } from './langfuse'
 function buildVideoPrompt(script: string, setting: string, brandProfile: BrandProfile): string {
   return `Create a 12-second UGC-style vertical video ad (9:16 aspect ratio).
 
-Show an attractive, relatable person ${setting}.
+Show an attractive, well-groomed, relatable person (20s-30s) ${setting}.
 They are speaking this script directly into the camera, naturally and enthusiastically:
 
 "${script}"
 
-IMPORTANT REQUIREMENTS:
-- The person should be attractive, well-groomed, and relatable (20s-30s)
-- Setting: ${setting}
-- The video MUST have burned-in captions/subtitles showing what the person is saying
-- Captions should be large, white text with a dark outline, centered at the bottom
-- Film style: shot on iPhone, natural lighting, no studio setup, slightly shaky handheld feel
-- The person should use natural hand gestures and facial expressions
+REQUIREMENTS:
+- Film style: shot on iPhone, natural lighting, slightly shaky handheld feel
+- The person uses natural hand gestures and animated facial expressions
+- They look genuine and excited, like sharing a real discovery with a friend
 - Product: ${brandProfile.product_name}
 - Tone: ${brandProfile.tone}, authentic, trustworthy
-- No logos, no watermarks, no end cards
+- No text overlays, no captions, no logos, no watermarks, no end cards
 - This should look indistinguishable from a real person's organic social media video`
 }
 
