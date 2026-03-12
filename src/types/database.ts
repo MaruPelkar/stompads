@@ -15,6 +15,8 @@ export interface Database {
           user_id: string
           url: string
           brand_profile: Json | null
+          brand_assets: Json | null
+          ad_copy: Json | null
           status: 'draft' | 'generating' | 'preview_ready' | 'payment_pending' | 'generating_full' | 'ready' | 'live' | 'paused'
           daily_budget: number | null
           meta_campaign_id: string | null
@@ -44,6 +46,8 @@ export interface Database {
           asset_url: string | null
           meta_ad_id: string | null
           meta_creative_id: string | null
+          aspect_ratio: string | null
+          placement: string | null
           status: 'generating' | 'ready' | 'live' | 'failed'
           prompt_used: string | null
           created_at: string
@@ -132,4 +136,18 @@ export interface BrandProfile {
   key_value_props: string[]
   product_name: string
   competitor_ad_examples: string[]
+}
+
+export interface BrandAssets {
+  logoUrl: string | null
+  faviconUrl: string | null
+  productImages: string[]
+  brandColors: string[]
+  ogImage: string | null
+}
+
+export interface AdCopy {
+  headline: string
+  primaryText: string
+  description: string
 }
