@@ -88,7 +88,7 @@ export async function generateVideoAd(
   const result = await fal.subscribe(FAL_VIDEO_MODEL, {
     input: {
       prompt,
-      duration: 12,
+      duration: '12' as const,
       aspect_ratio: '9:16',
       resolution: '720p',
     },
