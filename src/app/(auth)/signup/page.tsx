@@ -1,16 +1,25 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { Suspense, useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 
 export default function SignupPage() {
+  return (
+    <Suspense>
+      <SignupForm />
+    </Suspense>
+  )
+}
+
+function SignupForm() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const router = useRouter()
+  const searchParams = useSearchParams()
   const supabase = createClient()
 
   async function handleSubmit(e: React.FormEvent) {
@@ -25,7 +34,9 @@ export default function SignupPage() {
       return
     }
 
-    router.push('/onboard')
+    // Redirect to custom path if provided (e.g. /onboard?url=...)
+    const redirect = searchParams.get('redirect')
+    router.push(redirect || '/onboard')
   }
 
   return (

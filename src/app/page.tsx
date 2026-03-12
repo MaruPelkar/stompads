@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
 
 const sampleSites = [
   'https://www.acmecoffee.com',
@@ -14,6 +15,15 @@ const sampleSites = [
   'https://www.trailgear.io',
 ]
 
+function normalizeUrl(input: string): string {
+  let u = input.trim()
+  if (!u) return u
+  // Remove any existing protocol prefix to avoid doubling
+  u = u.replace(/^(https?:\/\/)+/i, '')
+  // Add https://
+  return `https://${u}`
+}
+
 export default function LandingPage() {
   const router = useRouter()
   const [url, setUrl] = useState('')
@@ -21,9 +31,19 @@ export default function LandingPage() {
   const [typingText, setTypingText] = useState('')
   const [userFocused, setUserFocused] = useState(false)
   const [launching, setLaunching] = useState(false)
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
   const siteIndexRef = useRef(0)
   const animatingRef = useRef(true)
 
+  // Check if user is logged in
+  useEffect(() => {
+    const supabase = createClient()
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setIsLoggedIn(!!user)
+    })
+  }, [])
+
+  // Typing animation
   useEffect(() => {
     if (userFocused) return
     let cancelled = false
@@ -67,12 +87,33 @@ export default function LandingPage() {
   }
 
   function handleLaunch() {
-    if (!url.trim()) {
-      document.getElementById('urlInput')?.focus()
-      return
-    }
     setLaunching(true)
-    router.push('/signup')
+    const trimmed = url.trim()
+
+    if (trimmed) {
+      // User has a URL — normalize and go to onboard with it
+      const normalized = normalizeUrl(trimmed)
+      if (isLoggedIn) {
+        router.push(`/onboard?url=${encodeURIComponent(normalized)}`)
+      } else {
+        // Save URL, send to signup, they'll get redirected to onboard after
+        router.push(`/signup?redirect=${encodeURIComponent(`/onboard?url=${encodeURIComponent(normalized)}`)}`)
+      }
+    } else {
+      // No URL — just take them to login/signup → new campaign
+      if (isLoggedIn) {
+        router.push('/onboard')
+      } else {
+        router.push('/signup')
+      }
+    }
+  }
+
+  function handleKeyDown(e: React.KeyboardEvent) {
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      handleLaunch()
+    }
   }
 
   const sliderPercent = ((budget - 5) / (500 - 5)) * 100
@@ -93,17 +134,23 @@ export default function LandingPage() {
         }}>
           <span>STOMP</span><span style={{ color: 'var(--orange)' }}>ADS</span>
         </a>
-        <span />
+        {isLoggedIn && (
+          <a href="/dashboard" style={{
+            fontFamily: 'var(--font-mono)', fontSize: '12px', padding: '8px 20px',
+            background: 'var(--orange)', color: '#fff', textDecoration: 'none',
+            textTransform: 'uppercase', letterSpacing: '1.5px', transition: 'all 0.3s',
+          }}>Dashboard</a>
+        )}
       </nav>
 
-      {/* Hero — everything fits in 100vh */}
+      {/* Hero */}
       <section style={{
         height: '100vh', display: 'flex', flexDirection: 'column',
         alignItems: 'center', justifyContent: 'center', textAlign: 'center',
         position: 'relative', padding: '80px 24px 40px', overflow: 'hidden',
       }}>
 
-        {/* Floating Ad Cards — real images + video around the hero */}
+        {/* Floating Ad Cards */}
         {[
           { src: '/samples/ad1.png', badge: 'Instagram', isVideo: false, cls: '', style: { top: '8%', left: '3%', width: 140, height: 180, transform: 'rotate(-6deg)', animation: 'floatIn 1s 0.2s ease-out forwards, drift1 8s ease-in-out 1.2s infinite' } },
           { src: '/samples/ad4.png', badge: 'TikTok', isVideo: false, cls: '', style: { top: '5%', right: '3%', width: 120, height: 210, transform: 'rotate(4deg)', animation: 'floatIn 1s 0.5s ease-out forwards, drift2 9s ease-in-out 1.5s infinite' } },
@@ -125,7 +172,6 @@ export default function LandingPage() {
               // eslint-disable-next-line @next/next/no-img-element
               <img src={ad.src} alt={ad.badge} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             )}
-            {/* Play icon overlay for video */}
             {ad.isVideo && (
               <div style={{
                 position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
@@ -146,7 +192,7 @@ export default function LandingPage() {
           </div>
         ))}
 
-        {/* Headline — compact */}
+        {/* Headline */}
         <h1 style={{
           fontFamily: 'var(--font-display)',
           fontSize: 'clamp(56px, 10vw, 130px)',
@@ -169,7 +215,7 @@ export default function LandingPage() {
           Enter your website. Set a budget. We handle everything else.
         </p>
 
-        {/* Input Group — tighter spacing */}
+        {/* Input Group */}
         <div style={{
           marginTop: '28px', display: 'flex', flexDirection: 'column',
           alignItems: 'center', gap: '14px', position: 'relative', zIndex: 10,
@@ -184,6 +230,7 @@ export default function LandingPage() {
               onChange={(e) => setUrl(e.target.value)}
               onFocus={handleFocus}
               onBlur={handleBlur}
+              onKeyDown={handleKeyDown}
               autoComplete="off"
               spellCheck={false}
               style={{

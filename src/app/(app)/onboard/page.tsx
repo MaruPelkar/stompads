@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { Suspense, useState, useEffect, useRef } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { UrlForm } from '@/components/onboard/UrlForm'
 import { BrandProfileCard } from '@/components/onboard/BrandProfileCard'
 import { AdPreview } from '@/components/onboard/AdPreview'
@@ -10,12 +11,32 @@ import type { BrandProfile, Ad, AdCopy } from '@/types/database'
 type Step = 'url' | 'generating' | 'preview' | 'checkout'
 
 export default function OnboardPage() {
+  return (
+    <Suspense>
+      <OnboardContent />
+    </Suspense>
+  )
+}
+
+function OnboardContent() {
   const [step, setStep] = useState<Step>('url')
   const [campaignId, setCampaignId] = useState<string | null>(null)
   const [brandProfile, setBrandProfile] = useState<BrandProfile | null>(null)
   const [adCopy, setAdCopy] = useState<AdCopy | null>(null)
   const [ads, setAds] = useState<Ad[]>([])
   const [error, setError] = useState<string | null>(null)
+  const searchParams = useSearchParams()
+  const autoStarted = useRef(false)
+
+  // Auto-start if URL is provided via query param (from landing page)
+  useEffect(() => {
+    const urlParam = searchParams.get('url')
+    if (urlParam && !autoStarted.current) {
+      autoStarted.current = true
+      handleUrlSubmit(urlParam)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams])
 
   async function handleUrlSubmit(url: string) {
     setStep('generating')
