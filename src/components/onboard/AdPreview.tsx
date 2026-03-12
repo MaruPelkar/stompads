@@ -2,44 +2,48 @@ import type { Ad } from '@/types/database'
 
 interface Props {
   ads: Ad[]
-  generating: boolean
 }
 
-export function AdPreview({ ads, generating }: Props) {
-  const imageAd = ads.find(a => a.type === 'image')
-  const videoAd = ads.find(a => a.type === 'video')
+export function AdPreview({ ads }: Props) {
+  if (ads.length === 0) return null
 
-  if (generating) {
-    return (
-      <div className="text-center py-12">
-        <div className="inline-block w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mb-4" />
-        <p className="text-gray-400">Generating your preview ads... (this takes ~30 seconds)</p>
-      </div>
-    )
-  }
+  const feedAd = ads.find(a => a.placement === 'feed')
+  const storyImageAd = ads.find(a => a.type === 'image' && a.placement === 'stories_reels')
+  const videoAd = ads.find(a => a.type === 'video')
 
   return (
     <div className="space-y-4">
-      <h3 className="font-semibold text-lg">Your Preview Ads</h3>
-      <div className="grid grid-cols-2 gap-4">
-        {imageAd?.asset_url && (
+      <h3 className="font-semibold text-lg">Your Ads — Ready to Launch</h3>
+      <div className="grid grid-cols-3 gap-4">
+        {feedAd?.asset_url && (
           <div className="space-y-2">
-            <span className="text-xs text-gray-500 uppercase tracking-wide">Image Ad</span>
+            <span className="text-xs text-gray-500 uppercase tracking-wide">Feed (1:1)</span>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src={imageAd.asset_url}
-              alt="Generated image ad"
-              className="w-full rounded-lg border border-gray-800"
+              src={feedAd.asset_url}
+              alt="Feed ad"
+              className="w-full aspect-square object-cover rounded-lg border border-gray-800"
+            />
+          </div>
+        )}
+        {storyImageAd?.asset_url && (
+          <div className="space-y-2">
+            <span className="text-xs text-gray-500 uppercase tracking-wide">Stories (9:16)</span>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={storyImageAd.asset_url}
+              alt="Stories ad"
+              className="w-full aspect-[9/16] object-cover rounded-lg border border-gray-800"
             />
           </div>
         )}
         {videoAd?.asset_url && (
           <div className="space-y-2">
-            <span className="text-xs text-gray-500 uppercase tracking-wide">Video Ad</span>
+            <span className="text-xs text-gray-500 uppercase tracking-wide">Reels Video (9:16)</span>
             <video
               src={videoAd.asset_url}
               controls
-              className="w-full rounded-lg border border-gray-800"
+              className="w-full aspect-[9/16] object-cover rounded-lg border border-gray-800"
             />
           </div>
         )}
