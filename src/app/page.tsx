@@ -201,14 +201,14 @@ export default function LandingPage() {
         position: 'relative', padding: '80px 24px 40px', overflow: 'hidden',
       }}>
 
-        {/* Floating Ad Cards — pushed to edges, smaller */}
+        {/* Floating Ad Cards — real images + video around the hero */}
         {[
-          { src: '/samples/ad1.png', badge: 'Instagram', cls: '', style: { top: '12%', left: '2%', width: 120, height: 150, animation: 'floatIn 1s 0.2s ease-out forwards, drift1 8s ease-in-out 1.2s infinite' } },
-          { src: '/samples/ad2.png', badge: 'TikTok', cls: '', style: { top: '8%', right: '2%', width: 110, height: 190, animation: 'floatIn 1s 0.5s ease-out forwards, drift2 9s ease-in-out 1.5s infinite' } },
-          { src: '/samples/ad3.png', badge: 'Facebook', cls: '', style: { bottom: '15%', left: '1%', width: 130, height: 100, animation: 'floatIn 1s 0.8s ease-out forwards, drift3 7s ease-in-out 1.8s infinite' } },
-          { src: '/samples/ad1.png', badge: 'YouTube', cls: '', style: { bottom: '10%', right: '2%', width: 115, height: 160, animation: 'floatIn 1s 1.1s ease-out forwards, drift4 10s ease-in-out 2.1s infinite' } },
-          { src: '/samples/ad2.png', badge: 'Reels', cls: 'hide-mobile', style: { top: '42%', left: '0%', width: 100, height: 130, animation: 'floatIn 1s 0.4s ease-out forwards, drift2 8.5s ease-in-out 1.4s infinite' } },
-          { src: '/samples/ad3.png', badge: 'Stories', cls: 'hide-mobile', style: { top: '40%', right: '0%', width: 105, height: 140, animation: 'floatIn 1s 0.7s ease-out forwards, drift3 9.5s ease-in-out 1.7s infinite' } },
+          { src: '/samples/ad1.png', badge: 'Instagram', isVideo: false, cls: '', style: { top: '8%', left: '3%', width: 140, height: 180, transform: 'rotate(-6deg)', animation: 'floatIn 1s 0.2s ease-out forwards, drift1 8s ease-in-out 1.2s infinite' } },
+          { src: '/samples/ad4.png', badge: 'TikTok', isVideo: false, cls: '', style: { top: '5%', right: '3%', width: 120, height: 210, transform: 'rotate(4deg)', animation: 'floatIn 1s 0.5s ease-out forwards, drift2 9s ease-in-out 1.5s infinite' } },
+          { src: '/samples/ad5.png', badge: 'Facebook', isVideo: false, cls: '', style: { bottom: '18%', left: '2%', width: 150, height: 150, transform: 'rotate(3deg)', animation: 'floatIn 1s 0.8s ease-out forwards, drift3 7s ease-in-out 1.8s infinite' } },
+          { src: '/samples/ugc-video.mp4', badge: 'Reels', isVideo: true, cls: '', style: { bottom: '10%', right: '3%', width: 130, height: 185, transform: 'rotate(-5deg)', animation: 'floatIn 1s 1.1s ease-out forwards, drift4 10s ease-in-out 2.1s infinite' } },
+          { src: '/samples/ad2.png', badge: 'YouTube', isVideo: false, cls: 'hide-mobile', style: { top: '38%', left: '0%', width: 110, height: 145, transform: 'rotate(2deg)', animation: 'floatIn 1s 0.4s ease-out forwards, drift2 8.5s ease-in-out 1.4s infinite' } },
+          { src: '/samples/ad3.png', badge: 'Stories', isVideo: false, cls: 'hide-mobile', style: { top: '35%', right: '0%', width: 115, height: 155, transform: 'rotate(-3deg)', animation: 'floatIn 1s 0.7s ease-out forwards, drift3 9.5s ease-in-out 1.7s infinite' } },
         ].map((ad, i) => (
           <div key={i} className={`floating-ad ${ad.cls}`} style={{
             position: 'absolute', borderRadius: '14px', overflow: 'hidden',
@@ -217,8 +217,23 @@ export default function LandingPage() {
             border: '1px solid rgba(0,0,0,0.06)',
             ...ad.style,
           }}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={ad.src} alt={ad.badge} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            {ad.isVideo ? (
+              <video src={ad.src} autoPlay muted loop playsInline style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            ) : (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={ad.src} alt={ad.badge} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            )}
+            {/* Play icon overlay for video */}
+            {ad.isVideo && (
+              <div style={{
+                position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
+                width: 32, height: 32, borderRadius: '50%',
+                background: 'rgba(255, 77, 0, 0.9)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                boxShadow: '0 4px 12px rgba(255, 77, 0, 0.3)',
+              }}>
+                <div style={{ width: 0, height: 0, borderLeft: '10px solid #fff', borderTop: '6px solid transparent', borderBottom: '6px solid transparent', marginLeft: '2px' }} />
+              </div>
+            )}
             <span style={{
               position: 'absolute', bottom: 6, left: 6,
               fontFamily: 'var(--font-mono)', fontSize: '8px', textTransform: 'uppercase',
