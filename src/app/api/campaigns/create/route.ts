@@ -99,16 +99,20 @@ export async function POST(request: NextRequest) {
       ads: ads || [],
     })
   } catch (err) {
+    const errorMessage = err instanceof Error ? err.message : 'Unknown error'
+    const errorStack = err instanceof Error ? err.stack : undefined
+    console.error('Campaign creation failed:', errorMessage, errorStack)
+
     await supabase
       .from('campaigns')
       .update({ status: 'draft' as const })
       .eq('id', campaign.id)
 
     trace.update({
-      metadata: { error: err instanceof Error ? err.message : 'Unknown error' },
+      metadata: { error: errorMessage },
     })
     await langfuse.flushAsync()
 
-    return NextResponse.json({ error: 'Failed to analyze URL' }, { status: 500 })
+    return NextResponse.json({ error: `Failed to analyze URL: ${errorMessage}` }, { status: 500 })
   }
 }
