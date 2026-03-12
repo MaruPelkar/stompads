@@ -108,6 +108,16 @@ export interface Database {
         Update: Partial<Omit<Database['public']['Tables']['ad_library']['Row'], 'id'>>
         Relationships: []
       }
+      ad_config: {
+        Row: {
+          key: string
+          value: string
+          updated_at: string
+        }
+        Insert: { key: string; value: string; updated_at?: string }
+        Update: { value?: string; updated_at?: string }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

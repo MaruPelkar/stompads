@@ -1,11 +1,12 @@
 import { fal } from '@fal-ai/client'
 import { langfuse } from './langfuse'
+import { getAdConfig } from './ad-config'
 
 fal.config({ credentials: process.env.FAL_KEY! })
 
 const FAL_IMAGE_MODEL_BASE = 'fal-ai/nano-banana-2'
 const FAL_IMAGE_MODEL_EDIT = 'fal-ai/nano-banana-2/edit'
-const FAL_VIDEO_MODEL = 'fal-ai/sora-2/text-to-video/pro'
+const FAL_SUBTITLE_MODEL = 'fal-ai/workflow-utilities/auto-subtitle'
 
 interface FalImageOutput {
   images?: { url: string }[]
@@ -17,6 +18,12 @@ interface FalVideoOutput {
   video_id?: string
 }
 
+interface FalSubtitleOutput {
+  video?: { url: string }
+  transcription?: string
+  subtitle_count?: number
+}
+
 export interface GeneratedAd {
   url: string
   type: 'image' | 'video'
@@ -25,7 +32,6 @@ export interface GeneratedAd {
 
 type AspectRatio = '1:1' | '9:16' | '16:9' | '4:5'
 
-/** Filter to only valid http(s) URLs */
 function validUrls(urls: string[]): string[] {
   return urls.filter(u => u && (u.startsWith('http://') || u.startsWith('https://')))
 }
@@ -77,7 +83,6 @@ export async function generateImageAd(
 
     return { url: imageUrl, type: 'image', requestId: result.requestId || '' }
   } catch (err) {
-    // If edit model fails (e.g. bad reference URLs), retry with base model
     if (hasReferences && model === FAL_IMAGE_MODEL_EDIT) {
       console.warn(`[FAL_EDIT_FAILED] Falling back to base model. Error: ${err instanceof Error ? err.message : err}`)
       span.end({ output: { error: 'Edit model failed, falling back to base', fallback: true } })
@@ -96,38 +101,32 @@ export async function generateImageAd(
   }
 }
 
-const FAL_SUBTITLE_MODEL = 'fal-ai/workflow-utilities/auto-subtitle'
-
-interface FalSubtitleOutput {
-  video?: { url: string }
-  transcription?: string
-  subtitle_count?: number
-}
-
 /**
- * Step 1: Generate raw video via Sora 2 Pro
+ * Generate raw video using config from Supabase (model, duration, resolution)
  */
-export async function generateRawVideo(
+async function generateRawVideo(
   prompt: string,
   traceId?: string
 ): Promise<GeneratedAd> {
+  const config = await getAdConfig()
+
   const trace = traceId
     ? langfuse.trace({ id: traceId })
     : langfuse.trace({ name: 'generate-raw-video' })
 
   const span = trace.span({
     name: 'fal-video-generation',
-    metadata: { model: FAL_VIDEO_MODEL },
+    metadata: { model: config.videoModel, duration: config.videoDuration, resolution: config.videoResolution },
     input: { prompt: prompt.slice(0, 200) },
   })
 
   try {
-    const result = await fal.subscribe(FAL_VIDEO_MODEL, {
+    const result = await fal.subscribe(config.videoModel, {
       input: {
         prompt,
-        duration: 12 as unknown as '12',
-        aspect_ratio: '9:16',
-        resolution: '720p',
+        duration: config.videoDuration as unknown as '4',
+        aspect_ratio: config.videoAspectRatio,
+        resolution: config.videoResolution,
       },
     })
     const data = result.data as FalVideoOutput
@@ -147,14 +146,14 @@ export async function generateRawVideo(
     const msg = err instanceof Error ? err.message : String(err)
     span.end({ output: { error: msg } })
     await langfuse.flushAsync()
-    throw new Error(`Video generation failed (sora-2): ${msg}`)
+    throw new Error(`Video generation failed (${config.videoModel}): ${msg}`)
   }
 }
 
 /**
- * Step 2: Add auto-subtitles to a video via fal-ai/workflow-utilities/auto-subtitle
+ * Add auto-subtitles to a video
  */
-export async function addSubtitles(
+async function addSubtitles(
   videoUrl: string,
   traceId?: string
 ): Promise<string> {
@@ -204,28 +203,28 @@ export async function addSubtitles(
     const msg = err instanceof Error ? err.message : String(err)
     span.end({ output: { error: msg } })
     await langfuse.flushAsync()
-    // Non-fatal: return original video if subtitling fails
     console.warn(`[SUBTITLE_FAILED] Returning raw video. Error: ${msg}`)
     return videoUrl
   }
 }
 
 /**
- * Full pipeline: Generate video + add subtitles
+ * Full pipeline: Generate video + optionally add subtitles (based on config)
  */
 export async function generateVideoAd(
   prompt: string,
   traceId?: string
 ): Promise<GeneratedAd> {
+  const config = await getAdConfig()
+
   // Step 1: Generate raw video
   const rawVideo = await generateRawVideo(prompt, traceId)
 
-  // Step 2: Add subtitles
-  const subtitledUrl = await addSubtitles(rawVideo.url, traceId)
-
-  return {
-    url: subtitledUrl,
-    type: 'video',
-    requestId: rawVideo.requestId,
+  // Step 2: Add subtitles (if enabled in config)
+  if (config.subtitleEnabled) {
+    const subtitledUrl = await addSubtitles(rawVideo.url, traceId)
+    return { url: subtitledUrl, type: 'video', requestId: rawVideo.requestId }
   }
+
+  return rawVideo
 }
