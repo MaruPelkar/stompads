@@ -24,28 +24,23 @@ export default function LandingPage() {
   const siteIndexRef = useRef(0)
   const animatingRef = useRef(true)
 
-  // Typing animation
   useEffect(() => {
     if (userFocused) return
-
     let cancelled = false
     animatingRef.current = true
 
     async function sleep(ms: number) {
       return new Promise(r => setTimeout(r, ms))
     }
-
     async function animateLoop() {
       while (!cancelled && animatingRef.current) {
         const site = sampleSites[siteIndexRef.current]
-        // Type
         for (let i = 0; i <= site.length; i++) {
           if (cancelled) return
           setTypingText(site.substring(0, i))
           await sleep(55 + Math.random() * 40)
         }
         await sleep(2200)
-        // Delete
         for (let i = site.length; i >= 0; i--) {
           if (cancelled) return
           setTypingText(site.substring(0, i))
@@ -55,7 +50,6 @@ export default function LandingPage() {
         siteIndexRef.current = (siteIndexRef.current + 1) % sampleSites.length
       }
     }
-
     animateLoop()
     return () => { cancelled = true }
   }, [userFocused])
@@ -78,7 +72,6 @@ export default function LandingPage() {
       return
     }
     setLaunching(true)
-    // Redirect to signup (they'll go through onboarding after)
     router.push('/signup')
   }
 
@@ -91,7 +84,6 @@ export default function LandingPage() {
 
         :root {
           --bg: #FFFCF8;
-          --bg-warm: #FFF8F0;
           --text: #1A1A1A;
           --text-light: #6B6B6B;
           --text-muted: #999;
@@ -142,9 +134,46 @@ export default function LandingPage() {
           0%, 100% { transform: translateY(0px) rotate(3deg); }
           50% { transform: translateY(-14px) rotate(1deg); }
         }
+        @keyframes drift4 {
+          0%, 100% { transform: translateY(0px) rotate(-3deg); }
+          50% { transform: translateY(-8px) rotate(-5deg); }
+        }
         @keyframes blink-caret {
           from, to { border-color: var(--orange); }
           50% { border-color: transparent; }
+        }
+
+        /* Slider thumb */
+        input[type="range"]::-webkit-slider-thumb {
+          -webkit-appearance: none;
+          width: 28px; height: 28px;
+          background: var(--orange); cursor: grab;
+          border: 3px solid var(--bg);
+          box-shadow: 0 0 0 2px var(--orange), 0 4px 16px rgba(255,77,0,0.25);
+          transition: transform 0.2s, box-shadow 0.2s;
+        }
+        input[type="range"]::-webkit-slider-thumb:hover {
+          transform: scale(1.15);
+          box-shadow: 0 0 0 2px var(--orange), 0 4px 24px rgba(255,77,0,0.4);
+        }
+        input[type="range"]::-moz-range-thumb {
+          width: 28px; height: 28px;
+          background: var(--orange); cursor: grab;
+          border: 3px solid var(--bg);
+          box-shadow: 0 0 0 2px var(--orange), 0 4px 16px rgba(255,77,0,0.25);
+          border-radius: 0;
+        }
+        input[type="range"]::-moz-range-track {
+          height: 4px; background: var(--slider-track); border: none;
+        }
+
+        /* Floating ads responsive */
+        @media (max-width: 1024px) {
+          .floating-ad { opacity: 0.4 !important; }
+        }
+        @media (max-width: 768px) {
+          .floating-ad { opacity: 0.25 !important; }
+          .floating-ad.hide-mobile { display: none !important; }
         }
       `}</style>
 
@@ -170,22 +199,23 @@ export default function LandingPage() {
         }}>Get Started</a>
       </nav>
 
-      {/* Hero */}
+      {/* Hero — everything fits in 100vh */}
       <section style={{
-        minHeight: '100vh', display: 'flex', flexDirection: 'column',
+        height: '100vh', display: 'flex', flexDirection: 'column',
         alignItems: 'center', justifyContent: 'center', textAlign: 'center',
-        position: 'relative', padding: '120px 24px 80px', overflow: 'hidden',
+        position: 'relative', padding: '80px 24px 40px', overflow: 'hidden',
       }}>
-        {/* Floating Ad Cards with real images */}
+
+        {/* Floating Ad Cards — pushed to edges, smaller */}
         {[
-          { cls: 'ad-1', src: '/samples/ad1.png', badge: 'Instagram', style: { top: '10%', left: '4%', width: 160, height: 200, transform: 'rotate(-6deg)', animation: 'floatIn 1s 0.2s ease-out forwards, drift1 8s ease-in-out 1.2s infinite' } },
-          { cls: 'ad-2', src: '/samples/ad2.png', badge: 'TikTok', style: { top: '6%', right: '5%', width: 140, height: 250, transform: 'rotate(4deg)', animation: 'floatIn 1s 0.5s ease-out forwards, drift2 9s ease-in-out 1.5s infinite' } },
-          { cls: 'ad-3', src: '/samples/ad3.png', badge: 'Facebook', style: { bottom: '18%', left: '6%', width: 180, height: 140, transform: 'rotate(3deg)', animation: 'floatIn 1s 0.8s ease-out forwards, drift3 7s ease-in-out 1.8s infinite' } },
-          { cls: 'ad-4', src: '/samples/ad1.png', badge: 'YouTube', style: { bottom: '12%', right: '4%', width: 150, height: 210, transform: 'rotate(-5deg)', animation: 'floatIn 1s 1.1s ease-out forwards, drift1 10s ease-in-out 2.1s infinite' } },
-          { cls: 'ad-5', src: '/samples/ad2.png', badge: 'Reels', style: { top: '35%', left: '2%', width: 130, height: 170, transform: 'rotate(2deg)', animation: 'floatIn 1s 0.4s ease-out forwards, drift2 8.5s ease-in-out 1.4s infinite' } },
-          { cls: 'ad-6', src: '/samples/ad3.png', badge: 'Stories', style: { top: '38%', right: '3%', width: 140, height: 180, transform: 'rotate(-3deg)', animation: 'floatIn 1s 0.7s ease-out forwards, drift3 9.5s ease-in-out 1.7s infinite' } },
-        ].map((ad) => (
-          <div key={ad.cls} style={{
+          { src: '/samples/ad1.png', badge: 'Instagram', cls: '', style: { top: '12%', left: '2%', width: 120, height: 150, animation: 'floatIn 1s 0.2s ease-out forwards, drift1 8s ease-in-out 1.2s infinite' } },
+          { src: '/samples/ad2.png', badge: 'TikTok', cls: '', style: { top: '8%', right: '2%', width: 110, height: 190, animation: 'floatIn 1s 0.5s ease-out forwards, drift2 9s ease-in-out 1.5s infinite' } },
+          { src: '/samples/ad3.png', badge: 'Facebook', cls: '', style: { bottom: '15%', left: '1%', width: 130, height: 100, animation: 'floatIn 1s 0.8s ease-out forwards, drift3 7s ease-in-out 1.8s infinite' } },
+          { src: '/samples/ad1.png', badge: 'YouTube', cls: '', style: { bottom: '10%', right: '2%', width: 115, height: 160, animation: 'floatIn 1s 1.1s ease-out forwards, drift4 10s ease-in-out 2.1s infinite' } },
+          { src: '/samples/ad2.png', badge: 'Reels', cls: 'hide-mobile', style: { top: '42%', left: '0%', width: 100, height: 130, animation: 'floatIn 1s 0.4s ease-out forwards, drift2 8.5s ease-in-out 1.4s infinite' } },
+          { src: '/samples/ad3.png', badge: 'Stories', cls: 'hide-mobile', style: { top: '40%', right: '0%', width: 105, height: 140, animation: 'floatIn 1s 0.7s ease-out forwards, drift3 9.5s ease-in-out 1.7s infinite' } },
+        ].map((ad, i) => (
+          <div key={i} className={`floating-ad ${ad.cls}`} style={{
             position: 'absolute', borderRadius: '14px', overflow: 'hidden',
             boxShadow: '0 8px 32px rgba(0,0,0,0.07), 0 2px 8px rgba(0,0,0,0.04)',
             pointerEvents: 'none', zIndex: 2, opacity: 0,
@@ -195,41 +225,43 @@ export default function LandingPage() {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={ad.src} alt={ad.badge} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             <span style={{
-              position: 'absolute', bottom: 8, left: 8,
-              fontFamily: 'var(--font-mono)', fontSize: '9px', textTransform: 'uppercase',
+              position: 'absolute', bottom: 6, left: 6,
+              fontFamily: 'var(--font-mono)', fontSize: '8px', textTransform: 'uppercase',
               letterSpacing: '1.5px', background: 'rgba(255,255,255,0.9)',
               backdropFilter: 'blur(8px)', color: 'var(--text)',
-              padding: '4px 10px', borderRadius: '4px', border: '1px solid rgba(0,0,0,0.06)',
+              padding: '3px 8px', borderRadius: '3px', border: '1px solid rgba(0,0,0,0.06)',
             }}>{ad.badge}</span>
           </div>
         ))}
 
+        {/* Headline — compact */}
         <h1 style={{
           fontFamily: 'var(--font-display)',
-          fontSize: 'clamp(64px, 12vw, 160px)',
+          fontSize: 'clamp(56px, 10vw, 130px)',
           lineHeight: 0.92, letterSpacing: '-1px',
           color: 'var(--text)', position: 'relative', zIndex: 10,
+          margin: 0,
         }}>
           <span style={{ color: 'var(--orange)' }}>RUN ADS.</span>
           <span style={{
             fontSize: '0.45em', color: 'var(--text)', letterSpacing: '2px',
-            display: 'block', marginTop: '8px',
+            display: 'block', marginTop: '4px',
           }}>NOT HEADACHES.</span>
         </h1>
 
         <p style={{
-          fontFamily: 'var(--font-mono)', fontSize: 'clamp(13px, 1.4vw, 16px)',
-          color: 'var(--text-light)', marginTop: '28px', letterSpacing: '1px',
-          textTransform: 'uppercase', position: 'relative', zIndex: 10, maxWidth: '500px',
+          fontFamily: 'var(--font-mono)', fontSize: 'clamp(11px, 1.2vw, 14px)',
+          color: 'var(--text-light)', marginTop: '20px', letterSpacing: '1px',
+          textTransform: 'uppercase', position: 'relative', zIndex: 10, maxWidth: '460px',
         }}>
           Enter your website. Set a budget. We handle everything else.
         </p>
 
-        {/* Input Group */}
+        {/* Input Group — tighter spacing */}
         <div style={{
-          marginTop: '48px', display: 'flex', flexDirection: 'column',
-          alignItems: 'center', gap: '20px', position: 'relative', zIndex: 10,
-          width: '100%', maxWidth: '520px',
+          marginTop: '28px', display: 'flex', flexDirection: 'column',
+          alignItems: 'center', gap: '14px', position: 'relative', zIndex: 10,
+          width: '100%', maxWidth: '480px',
         }}>
           {/* URL Input */}
           <div style={{ width: '100%', position: 'relative' }}>
@@ -243,9 +275,9 @@ export default function LandingPage() {
               autoComplete="off"
               spellCheck={false}
               style={{
-                width: '100%', padding: '18px 24px', background: 'var(--input-bg)',
+                width: '100%', padding: '14px 20px', background: 'var(--input-bg)',
                 border: '1px solid var(--input-border)', color: 'var(--text)',
-                fontFamily: 'var(--font-mono)', fontSize: '15px', outline: 'none',
+                fontFamily: 'var(--font-mono)', fontSize: '14px', outline: 'none',
                 letterSpacing: '0.5px', caretColor: 'var(--orange)',
                 transition: 'border-color 0.3s, box-shadow 0.3s',
               }}
@@ -253,9 +285,9 @@ export default function LandingPage() {
             {!userFocused && (
               <div style={{
                 position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-                display: 'flex', alignItems: 'center', padding: '0 24px',
+                display: 'flex', alignItems: 'center', padding: '0 20px',
                 pointerEvents: 'none', fontFamily: 'var(--font-mono)',
-                fontSize: '15px', color: 'var(--text-muted)', letterSpacing: '0.5px',
+                fontSize: '14px', color: 'var(--text-muted)', letterSpacing: '0.5px',
                 overflow: 'hidden',
               }}>
                 <span style={{
@@ -268,16 +300,16 @@ export default function LandingPage() {
           </div>
 
           {/* Budget Slider */}
-          <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
+          <div style={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
             <span style={{
-              fontFamily: 'var(--font-mono)', fontSize: '12px', textTransform: 'uppercase',
+              fontFamily: 'var(--font-mono)', fontSize: '11px', textTransform: 'uppercase',
               letterSpacing: '2px', color: 'var(--text-light)',
             }}>Daily Budget</span>
             <span style={{
-              fontFamily: 'var(--font-display)', fontSize: '42px',
+              fontFamily: 'var(--font-display)', fontSize: '36px',
               color: 'var(--orange)', letterSpacing: '2px', lineHeight: 1,
             }}>${budget}</span>
-            <div style={{ width: '100%', position: 'relative', height: '48px', display: 'flex', alignItems: 'center' }}>
+            <div style={{ width: '100%', position: 'relative', height: '40px', display: 'flex', alignItems: 'center' }}>
               <input
                 type="range"
                 min={5}
@@ -294,8 +326,8 @@ export default function LandingPage() {
             </div>
             <div style={{
               display: 'flex', justifyContent: 'space-between', width: '100%',
-              fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-muted)',
-              letterSpacing: '1px', marginTop: '-6px',
+              fontFamily: 'var(--font-mono)', fontSize: '10px', color: 'var(--text-muted)',
+              letterSpacing: '1px', marginTop: '-4px',
             }}>
               <span>$5/day</span>
               <span>$500/day</span>
@@ -307,11 +339,11 @@ export default function LandingPage() {
             onClick={handleLaunch}
             disabled={launching}
             style={{
-              fontFamily: 'var(--font-display)', fontSize: '22px', letterSpacing: '3px',
-              padding: '20px 64px', background: launching ? 'var(--green)' : 'var(--orange)',
+              fontFamily: 'var(--font-display)', fontSize: '20px', letterSpacing: '3px',
+              padding: '16px 56px', background: launching ? 'var(--green)' : 'var(--orange)',
               color: '#fff', border: 'none', cursor: launching ? 'wait' : 'pointer',
               textTransform: 'uppercase', transition: 'all 0.3s',
-              boxShadow: '0 4px 24px rgba(255, 77, 0, 0.25)', marginTop: '8px',
+              boxShadow: '0 4px 24px rgba(255, 77, 0, 0.25)', marginTop: '4px',
               position: 'relative', zIndex: 10,
             }}
           >
@@ -328,32 +360,6 @@ export default function LandingPage() {
       }}>
         &copy; 2026 StompAds. All rights reserved.
       </footer>
-
-      {/* Slider thumb styles (can't do pseudo-elements inline) */}
-      <style jsx global>{`
-        input[type="range"]::-webkit-slider-thumb {
-          -webkit-appearance: none;
-          width: 28px; height: 28px;
-          background: var(--orange); cursor: grab;
-          border: 3px solid var(--bg);
-          box-shadow: 0 0 0 2px var(--orange), 0 4px 16px rgba(255,77,0,0.25);
-          transition: transform 0.2s, box-shadow 0.2s;
-        }
-        input[type="range"]::-webkit-slider-thumb:hover {
-          transform: scale(1.15);
-          box-shadow: 0 0 0 2px var(--orange), 0 4px 24px rgba(255,77,0,0.4);
-        }
-        input[type="range"]::-moz-range-thumb {
-          width: 28px; height: 28px;
-          background: var(--orange); cursor: grab;
-          border: 3px solid var(--bg);
-          box-shadow: 0 0 0 2px var(--orange), 0 4px 16px rgba(255,77,0,0.25);
-          border-radius: 0;
-        }
-        input[type="range"]::-moz-range-track {
-          height: 4px; background: var(--slider-track); border: none;
-        }
-      `}</style>
     </>
   )
 }
