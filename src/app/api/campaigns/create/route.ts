@@ -4,6 +4,7 @@ import { scrapeUrl } from '@/lib/scraper'
 import { buildBrandProfile } from '@/lib/brand-profiler'
 import { findCompetitorAds } from '@/lib/competitor-research'
 import { generateCampaignAds } from '@/lib/ad-generator'
+import { storeBrandAssets } from '@/lib/asset-storage'
 import { langfuse } from '@/lib/langfuse'
 import type { Json } from '@/types/database'
 
@@ -95,13 +96,22 @@ export async function POST(request: NextRequest) {
     console.warn('[COMPETITOR_RESEARCH_FAILED]', err instanceof Error ? err.message : err)
   }
 
-  // Step 4: Save profile + assets + copy
+  // Step 4: Store brand assets in Supabase (download from customer site → our storage)
+  let storedAssets = scrape.brandAssets
+  try {
+    storedAssets = await storeBrandAssets(campaign.id, scrape.brandAssets)
+  } catch (err) {
+    // Non-fatal — we can still generate ads without stored refs, just less reliable
+    console.warn('[ASSET_STORAGE_FAILED]', err instanceof Error ? err.message : err)
+  }
+
+  // Step 5: Save profile + assets + copy
   try {
     const { error: updateError } = await supabase
       .from('campaigns')
       .update({
         brand_profile: brandProfile as unknown as Json,
-        brand_assets: scrape.brandAssets as unknown as Json,
+        brand_assets: storedAssets as unknown as Json,
         ad_copy: adCopy as unknown as Json,
         status: 'generating' as const,
       })
@@ -114,9 +124,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: `Failed to save brand profile: ${msg}`, code: 'CAMPAIGN_UPDATE_FAILED', campaignId: campaign.id }, { status: 500 })
   }
 
-  // Step 5: Generate ads
+  // Step 6: Generate ads (using our stored Supabase URLs as references)
   try {
-    await generateCampaignAds(campaign.id, brandProfile, scrape.brandAssets)
+    await generateCampaignAds(campaign.id, brandProfile, storedAssets)
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Unknown generation error'
     await fail('AD_GENERATION_FAILED', msg)
@@ -138,7 +148,7 @@ export async function POST(request: NextRequest) {
     campaignId: campaign.id,
     brandProfile,
     adCopy,
-    brandAssets: scrape.brandAssets,
+    brandAssets: storedAssets,
     ads: ads || [],
   })
 }
