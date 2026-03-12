@@ -29,7 +29,7 @@ export default function OnboardPage() {
     const data = await res.json()
 
     if (!res.ok) {
-      setError(data.error || 'Failed to analyze URL')
+      setError(`${data.error || 'Failed to analyze URL'}${data.code ? ` [${data.code}]` : ''}`)
       setStep('url')
       return
     }

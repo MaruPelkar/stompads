@@ -12,12 +12,12 @@ export async function POST(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return NextResponse.json({ error: 'Unauthorized', code: 'AUTH_FAILED' }, { status: 401 })
   }
 
   const { url } = await request.json()
   if (!url) {
-    return NextResponse.json({ error: 'URL is required' }, { status: 400 })
+    return NextResponse.json({ error: 'URL is required', code: 'MISSING_URL' }, { status: 400 })
   }
 
   const trace = langfuse.trace({
@@ -26,6 +26,7 @@ export async function POST(request: NextRequest) {
     metadata: { url },
   })
 
+  // Step 0: Create campaign
   const { data: campaign, error: campaignError } = await supabase
     .from('campaigns')
     .insert({
@@ -44,30 +45,59 @@ export async function POST(request: NextRequest) {
     .single()
 
   if (campaignError || !campaign) {
-    trace.update({ metadata: { error: 'Failed to create campaign' } })
+    const msg = campaignError?.message || 'Unknown DB error'
+    console.error('[CAMPAIGN_CREATE_FAILED]', msg)
+    trace.update({ metadata: { error: msg, code: 'CAMPAIGN_CREATE_FAILED' } })
     await langfuse.flushAsync()
-    return NextResponse.json({ error: 'Failed to create campaign' }, { status: 500 })
+    return NextResponse.json({ error: `Failed to create campaign: ${msg}`, code: 'CAMPAIGN_CREATE_FAILED' }, { status: 500 })
   }
 
   trace.update({ sessionId: campaign.id })
 
+  async function fail(code: string, message: string) {
+    console.error(`[${code}]`, message)
+    await supabase.from('campaigns').update({ status: 'draft' as const }).eq('id', campaign!.id)
+    trace.update({ metadata: { error: message, code } })
+    await langfuse.flushAsync()
+  }
+
+  // Step 1: Scrape
+  let scrape
   try {
-    // 1. Scrape site + extract brand assets
-    const scrape = await scrapeUrl(url, trace.id)
+    scrape = await scrapeUrl(url, trace.id)
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : 'Unknown scraping error'
+    await fail('SCRAPE_FAILED', msg)
+    return NextResponse.json({ error: `Scraping failed for ${url}: ${msg}`, code: 'SCRAPE_FAILED', campaignId: campaign.id }, { status: 500 })
+  }
 
-    // 2. Build brand profile + generate ad copy
-    const { brandProfile, adCopy } = await buildBrandProfile(scrape, url)
+  // Step 2: Brand profile + ad copy
+  let brandProfile, adCopy
+  try {
+    const result = await buildBrandProfile(scrape, url)
+    brandProfile = result.brandProfile
+    adCopy = result.adCopy
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : 'Unknown profiling error'
+    await fail('PROFILE_FAILED', msg)
+    return NextResponse.json({ error: `Brand profiling failed: ${msg}`, code: 'PROFILE_FAILED', campaignId: campaign.id }, { status: 500 })
+  }
 
-    // 3. Competitor research (non-fatal)
+  // Step 3: Competitor research (non-fatal)
+  try {
     const competitorAds = await findCompetitorAds(
       brandProfile.category,
       brandProfile.key_value_props,
       trace.id
     )
     brandProfile.competitor_ad_examples = competitorAds.map(a => a.ad_creative_body || '').filter(Boolean)
+  } catch (err) {
+    console.warn('[COMPETITOR_RESEARCH_FAILED]', err instanceof Error ? err.message : err)
+  }
 
-    // 4. Save profile + assets + copy to campaign
-    await supabase
+  // Step 4: Save profile + assets + copy
+  try {
+    const { error: updateError } = await supabase
       .from('campaigns')
       .update({
         brand_profile: brandProfile as unknown as Json,
@@ -77,42 +107,38 @@ export async function POST(request: NextRequest) {
       })
       .eq('id', campaign.id)
 
-    // 5. Generate all 3 ads (marks campaign as 'ready' when done)
-    await generateCampaignAds(campaign.id, brandProfile, scrape.brandAssets)
-
-    // 6. Fetch generated ads to return to client
-    const { data: ads } = await supabase
-      .from('ads')
-      .select()
-      .eq('campaign_id', campaign.id)
-
-    trace.update({
-      output: { campaignId: campaign.id, product: brandProfile.product_name, adsGenerated: ads?.length },
-    })
-    await langfuse.flushAsync()
-
-    return NextResponse.json({
-      campaignId: campaign.id,
-      brandProfile,
-      adCopy,
-      brandAssets: scrape.brandAssets,
-      ads: ads || [],
-    })
+    if (updateError) throw new Error(updateError.message)
   } catch (err) {
-    const errorMessage = err instanceof Error ? err.message : 'Unknown error'
-    const errorStack = err instanceof Error ? err.stack : undefined
-    console.error('Campaign creation failed:', errorMessage, errorStack)
-
-    await supabase
-      .from('campaigns')
-      .update({ status: 'draft' as const })
-      .eq('id', campaign.id)
-
-    trace.update({
-      metadata: { error: errorMessage },
-    })
-    await langfuse.flushAsync()
-
-    return NextResponse.json({ error: `Failed to analyze URL: ${errorMessage}` }, { status: 500 })
+    const msg = err instanceof Error ? err.message : 'Unknown DB error'
+    await fail('CAMPAIGN_UPDATE_FAILED', msg)
+    return NextResponse.json({ error: `Failed to save brand profile: ${msg}`, code: 'CAMPAIGN_UPDATE_FAILED', campaignId: campaign.id }, { status: 500 })
   }
+
+  // Step 5: Generate ads
+  try {
+    await generateCampaignAds(campaign.id, brandProfile, scrape.brandAssets)
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : 'Unknown generation error'
+    await fail('AD_GENERATION_FAILED', msg)
+    return NextResponse.json({ error: `Ad generation failed: ${msg}`, code: 'AD_GENERATION_FAILED', campaignId: campaign.id }, { status: 500 })
+  }
+
+  // Step 6: Fetch generated ads
+  const { data: ads } = await supabase
+    .from('ads')
+    .select()
+    .eq('campaign_id', campaign.id)
+
+  trace.update({
+    output: { campaignId: campaign.id, product: brandProfile.product_name, adsGenerated: ads?.length },
+  })
+  await langfuse.flushAsync()
+
+  return NextResponse.json({
+    campaignId: campaign.id,
+    brandProfile,
+    adCopy,
+    brandAssets: scrape.brandAssets,
+    ads: ads || [],
+  })
 }
