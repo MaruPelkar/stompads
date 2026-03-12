@@ -85,61 +85,64 @@ export async function generateCampaignAds(
 
   const refs = referenceImages.length > 0 ? referenceImages : undefined
 
-  // Generate all 3 ads in parallel
-  const [squareImage, verticalImage, video] = await Promise.all([
+  // Generate all 3 ads in parallel — use allSettled so one failure doesn't kill all
+  const results = await Promise.allSettled([
     generateImageAd(squareImagePrompt, '1:1', refs, trace.id),
     generateImageAd(verticalImagePrompt, '9:16', refs, trace.id),
     generateVideoAd(videoPrompt, trace.id),
   ])
 
-  // Insert all 3 ads
-  await supabase.from('ads').insert([
-    {
-      campaign_id: campaignId,
-      type: 'image' as const,
-      is_preview: true,
-      asset_url: squareImage.url,
-      fal_request_id: squareImage.requestId,
-      status: 'ready' as const,
-      prompt_used: squareImagePrompt,
-      aspect_ratio: '1:1',
-      placement: 'feed',
-      meta_ad_id: null,
-      meta_creative_id: null,
-    },
-    {
-      campaign_id: campaignId,
-      type: 'image' as const,
-      is_preview: true,
-      asset_url: verticalImage.url,
-      fal_request_id: verticalImage.requestId,
-      status: 'ready' as const,
-      prompt_used: verticalImagePrompt,
-      aspect_ratio: '9:16',
-      placement: 'stories_reels',
-      meta_ad_id: null,
-      meta_creative_id: null,
-    },
-    {
-      campaign_id: campaignId,
-      type: 'video' as const,
-      is_preview: true,
-      asset_url: video.url,
-      fal_request_id: video.requestId,
-      status: 'ready' as const,
-      prompt_used: videoPrompt,
-      aspect_ratio: '9:16',
-      placement: 'stories_reels',
-      meta_ad_id: null,
-      meta_creative_id: null,
-    },
-  ])
+  const adConfigs = [
+    { type: 'image' as const, aspectRatio: '1:1', placement: 'feed', prompt: squareImagePrompt },
+    { type: 'image' as const, aspectRatio: '9:16', placement: 'stories_reels', prompt: verticalImagePrompt },
+    { type: 'video' as const, aspectRatio: '9:16', placement: 'stories_reels', prompt: videoPrompt },
+  ]
+
+  const adsToInsert = []
+  const errors: string[] = []
+
+  for (let i = 0; i < results.length; i++) {
+    const result = results[i]
+    const config = adConfigs[i]
+
+    if (result.status === 'fulfilled') {
+      adsToInsert.push({
+        campaign_id: campaignId,
+        type: config.type,
+        is_preview: true,
+        asset_url: result.value.url,
+        fal_request_id: result.value.requestId,
+        status: 'ready' as const,
+        prompt_used: config.prompt,
+        aspect_ratio: config.aspectRatio,
+        placement: config.placement,
+        meta_ad_id: null,
+        meta_creative_id: null,
+      })
+    } else {
+      const msg = result.reason instanceof Error ? result.reason.message : String(result.reason)
+      console.error(`[AD_GEN_PARTIAL_FAIL] ${config.type} ${config.aspectRatio}: ${msg}`)
+      errors.push(`${config.type} ${config.aspectRatio}: ${msg}`)
+    }
+  }
+
+  // Insert whatever succeeded
+  if (adsToInsert.length > 0) {
+    await supabase.from('ads').insert(adsToInsert)
+  }
+
+  // If ALL failed, throw so the route returns an error
+  if (adsToInsert.length === 0) {
+    trace.update({ output: { adsGenerated: 0, errors } })
+    await langfuse.flushAsync()
+    throw new Error(`All ad generations failed: ${errors.join('; ')}`)
+  }
 
   await supabase
     .from('campaigns')
     .update({ status: 'ready' })
     .eq('id', campaignId)
 
-  trace.update({ output: { adsGenerated: 3 } })
+  trace.update({ output: { adsGenerated: adsToInsert.length, failed: errors.length, errors } })
   await langfuse.flushAsync()
 }
