@@ -7,17 +7,17 @@ export default function SuccessPage({
 }) {
   void searchParams
   return (
-    <div className="text-center space-y-6 py-12">
-      <div className="text-6xl">&#127881;</div>
-      <h1 className="text-3xl font-bold">Payment confirmed!</h1>
-      <p className="text-gray-400 text-lg">
-        We&apos;re generating your full campaign now. Check your dashboard in a few minutes.
+    <div className="text-center space-y-6 py-16">
+      <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '48px', letterSpacing: '1px', color: 'var(--green)' }}>PAYMENT CONFIRMED</h1>
+      <p style={{ fontFamily: 'var(--font-mono)', fontSize: '13px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '1px' }}>
+        Your campaign is ready. Head to your dashboard to go live.
       </p>
       <Link
         href="/dashboard"
-        className="inline-block bg-blue-600 hover:bg-blue-700 text-white font-semibold px-8 py-3 rounded-lg transition"
+        className="inline-block px-8 py-3 transition"
+        style={{ background: 'var(--orange)', color: '#fff', fontFamily: 'var(--font-display)', fontSize: '18px', letterSpacing: '2px', textTransform: 'uppercase', textDecoration: 'none' }}
       >
-        Go to Dashboard &rarr;
+        GO TO DASHBOARD
       </Link>
     </div>
   )

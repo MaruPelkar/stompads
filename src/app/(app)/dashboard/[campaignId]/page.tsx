@@ -5,6 +5,12 @@ import { MetricsBadge } from '@/components/dashboard/MetricsBadge'
 import type { BrandProfile, Metrics } from '@/types/database'
 import GoLiveButton from './GoLiveButton'
 
+function statusStyle(status: string) {
+  if (status === 'live') return { background: 'var(--green-soft)', color: 'var(--green)' }
+  if (status === 'ready') return { background: 'var(--orange-soft)', color: 'var(--orange)' }
+  return { background: 'var(--input-bg)', color: 'var(--text-muted)' }
+}
+
 export default async function CampaignPage({ params }: { params: { campaignId: string } }) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -46,13 +52,16 @@ export default async function CampaignPage({ params }: { params: { campaignId: s
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-bold">{brandProfile?.product_name || campaign.url}</h1>
-        <p className="text-gray-400 mt-1">{campaign.url}</p>
-        <span className={`inline-block mt-2 text-xs px-3 py-1 rounded-full ${
-          campaign.status === 'live' ? 'bg-green-900 text-green-300' :
-          campaign.status === 'ready' ? 'bg-blue-900 text-blue-300' :
-          'bg-gray-800 text-gray-400'
-        }`}>
+        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: '32px', letterSpacing: '1px', color: 'var(--text)' }}>
+          {brandProfile?.product_name || campaign.url}
+        </h1>
+        <p style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>{campaign.url}</p>
+        <span style={{
+          display: 'inline-block', marginTop: '8px',
+          fontSize: '10px', fontFamily: 'var(--font-mono)', textTransform: 'uppercase', letterSpacing: '1px',
+          padding: '4px 10px', borderRadius: '4px',
+          ...statusStyle(campaign.status),
+        }}>
           {campaign.status}
         </span>
       </div>
@@ -71,7 +80,7 @@ export default async function CampaignPage({ params }: { params: { campaignId: s
       )}
 
       <div>
-        <h2 className="text-lg font-semibold mb-4">Your Ads</h2>
+        <h2 style={{ fontFamily: 'var(--font-display)', fontSize: '22px', letterSpacing: '1px', color: 'var(--text)', marginBottom: '16px' }}>YOUR ADS</h2>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
           {(ads || []).map(ad => (
             <AdCard

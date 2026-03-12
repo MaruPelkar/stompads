@@ -31,39 +31,42 @@ export default function SignupPage() {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
-        <label className="block text-sm text-gray-400 mb-1">Email</label>
+        <label style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '1.5px', color: 'var(--text-light)' }}>Email</label>
         <input
           type="email"
           value={email}
           onChange={e => setEmail(e.target.value)}
           required
-          className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-blue-500"
+          className="w-full mt-1 px-4 py-3 outline-none transition"
+          style={{ background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text)', fontFamily: 'var(--font-mono)', fontSize: '14px' }}
           placeholder="you@example.com"
         />
       </div>
       <div>
-        <label className="block text-sm text-gray-400 mb-1">Password</label>
+        <label style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', textTransform: 'uppercase', letterSpacing: '1.5px', color: 'var(--text-light)' }}>Password</label>
         <input
           type="password"
           value={password}
           onChange={e => setPassword(e.target.value)}
           required
           minLength={6}
-          className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-blue-500"
+          className="w-full mt-1 px-4 py-3 outline-none transition"
+          style={{ background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text)', fontFamily: 'var(--font-mono)', fontSize: '14px' }}
           placeholder="••••••••"
         />
       </div>
-      {error && <p className="text-red-400 text-sm">{error}</p>}
+      {error && <p style={{ color: 'var(--red)', fontFamily: 'var(--font-mono)', fontSize: '12px' }}>{error}</p>}
       <button
         type="submit"
         disabled={loading}
-        className="w-full bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white font-semibold py-3 rounded-lg transition"
+        className="w-full py-3 transition disabled:opacity-50"
+        style={{ background: 'var(--orange)', color: '#fff', fontFamily: 'var(--font-display)', fontSize: '18px', letterSpacing: '2px', textTransform: 'uppercase', border: 'none', cursor: 'pointer' }}
       >
-        {loading ? 'Creating account...' : 'Create account'}
+        {loading ? 'CREATING ACCOUNT...' : 'CREATE ACCOUNT'}
       </button>
-      <p className="text-center text-gray-500 text-sm">
+      <p className="text-center" style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--text-muted)' }}>
         Already have an account?{' '}
-        <Link href="/login" className="text-blue-400 hover:underline">Log in</Link>
+        <Link href="/login" style={{ color: 'var(--orange)' }}>Log in</Link>
       </p>
     </form>
   )

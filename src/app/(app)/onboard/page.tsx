@@ -69,9 +69,9 @@ export default function OnboardPage() {
 
       {step === 'generating' && (
         <div className="text-center py-16">
-          <div className="inline-block w-10 h-10 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mb-4" />
-          <p className="text-gray-400 text-lg">Analyzing your site & generating ads...</p>
-          <p className="text-gray-600 text-sm mt-2">This takes about 60 seconds</p>
+          <div className="inline-block w-10 h-10 border-2 border-t-transparent rounded-full animate-spin mb-4" style={{ borderColor: 'var(--orange)', borderTopColor: 'transparent' }} />
+          <p style={{ fontFamily: 'var(--font-body)', fontSize: '18px', color: 'var(--text)' }}>Analyzing your site & generating ads...</p>
+          <p style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--text-muted)', marginTop: '8px', textTransform: 'uppercase', letterSpacing: '1px' }}>This takes about 60 seconds</p>
         </div>
       )}
 
@@ -85,13 +85,13 @@ export default function OnboardPage() {
 
       {step === 'checkout' && (
         <div className="text-center py-16">
-          <div className="inline-block w-10 h-10 border-2 border-green-500 border-t-transparent rounded-full animate-spin mb-4" />
-          <p className="text-gray-400 text-lg">Redirecting to payment...</p>
+          <div className="inline-block w-10 h-10 border-2 border-t-transparent rounded-full animate-spin mb-4" style={{ borderColor: 'var(--green)', borderTopColor: 'transparent' }} />
+          <p style={{ fontFamily: 'var(--font-body)', fontSize: '18px', color: 'var(--text)' }}>Redirecting to payment...</p>
         </div>
       )}
 
       {error && (
-        <div className="bg-red-900/20 border border-red-800 rounded-lg p-4 text-red-400 text-sm">
+        <div style={{ background: 'var(--red-soft)', border: '1px solid var(--red)', borderRadius: '6px', padding: '12px 16px', color: 'var(--red)', fontFamily: 'var(--font-mono)', fontSize: '12px' }}>
           {error}
         </div>
       )}

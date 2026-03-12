@@ -2,26 +2,31 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:wght@300;400;500&family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&display=swap');
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+:root {
+  --bg: #FFFCF8;
+  --text: #1A1A1A;
+  --text-light: #6B6B6B;
+  --text-muted: #999;
+  --orange: #FF4D00;
+  --orange-dim: #E04400;
+  --orange-soft: rgba(255, 77, 0, 0.08);
+  --input-bg: #F5F0EA;
+  --input-border: #E0DAD2;
+  --card-bg: #FFFFFF;
+  --card-border: #E8E2DA;
+  --green: #1A6640;
+  --green-soft: rgba(26, 102, 64, 0.08);
+  --red: #D32F2F;
+  --red-soft: rgba(211, 47, 47, 0.08);
+  --font-display: 'Bebas Neue', sans-serif;
+  --font-body: 'Bricolage Grotesque', sans-serif;
+  --font-mono: 'DM Mono', monospace;
 }
 
 body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
-}
-
-@layer utilities {
-  .text-balance {
-    text-wrap: balance;
-  }
+  color: var(--text);
+  background: var(--bg);
+  font-family: var(--font-body);
 }

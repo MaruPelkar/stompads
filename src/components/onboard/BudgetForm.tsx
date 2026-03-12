@@ -17,16 +17,16 @@ export function BudgetForm({ onSubmit, loading }: Props) {
   }
 
   return (
-    <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 space-y-4">
+    <div style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: '8px', padding: '24px' }}>
       <div>
-        <h3 className="font-semibold text-lg">Set your daily budget</h3>
-        <p className="text-gray-400 text-sm mt-1">You&apos;ll be charged for the first day before we generate your full campaign.</p>
+        <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '22px', letterSpacing: '1px', color: 'var(--text)' }}>SET YOUR <span style={{ color: 'var(--orange)' }}>BUDGET</span></h3>
+        <p style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>You&apos;ll be charged for the first day before we launch.</p>
       </div>
-      <form onSubmit={handleSubmit} className="flex gap-3 items-end">
+      <form onSubmit={handleSubmit} className="flex gap-3 items-end mt-4">
         <div className="flex-1">
-          <label className="block text-sm text-gray-400 mb-1">Daily budget (USD)</label>
-          <div className="relative">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">$</span>
+          <label style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '1.5px', color: 'var(--text-muted)' }}>Daily budget (USD)</label>
+          <div className="relative mt-1">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>$</span>
             <input
               type="number"
               value={budget}
@@ -34,16 +34,18 @@ export function BudgetForm({ onSubmit, loading }: Props) {
               min="5"
               step="1"
               required
-              className="w-full bg-gray-800 border border-gray-700 rounded-lg pl-7 pr-4 py-3 text-white focus:outline-none focus:border-blue-500"
+              className="w-full pl-7 pr-4 py-3 outline-none"
+              style={{ background: 'var(--input-bg)', border: '1px solid var(--input-border)', color: 'var(--text)', fontFamily: 'var(--font-mono)', fontSize: '14px' }}
             />
           </div>
         </div>
         <button
           type="submit"
           disabled={loading}
-          className="bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white font-semibold px-6 py-3 rounded-lg transition"
+          className="px-6 py-3 transition disabled:opacity-50"
+          style={{ background: 'var(--orange)', color: '#fff', fontFamily: 'var(--font-display)', fontSize: '16px', letterSpacing: '2px', textTransform: 'uppercase', border: 'none', cursor: 'pointer', whiteSpace: 'nowrap' }}
         >
-          {loading ? 'Processing...' : 'Generate full campaign \u2192'}
+          {loading ? 'PROCESSING...' : 'PAY & LAUNCH'}
         </button>
       </form>
     </div>

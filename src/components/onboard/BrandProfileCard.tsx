@@ -7,46 +7,46 @@ interface Props {
 
 export function BrandProfileCard({ profile, adCopy }: Props) {
   return (
-    <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 space-y-4">
-      <h3 className="font-semibold text-lg">Brand Profile</h3>
-      <div className="grid grid-cols-2 gap-4 text-sm">
+    <div style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: '8px', padding: '24px' }}>
+      <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '22px', letterSpacing: '1px', color: 'var(--text)' }}>BRAND PROFILE</h3>
+      <div className="grid grid-cols-2 gap-4 mt-4" style={{ fontSize: '14px' }}>
         <div>
-          <span className="text-gray-500">Product</span>
-          <p className="text-white mt-1">{profile.product_name}</p>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '1.5px', color: 'var(--text-muted)' }}>Product</span>
+          <p style={{ color: 'var(--text)', marginTop: '4px', fontWeight: 600 }}>{profile.product_name}</p>
         </div>
         <div>
-          <span className="text-gray-500">Category</span>
-          <p className="text-white mt-1 capitalize">{profile.category}</p>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '1.5px', color: 'var(--text-muted)' }}>Category</span>
+          <p style={{ color: 'var(--text)', marginTop: '4px', fontWeight: 600, textTransform: 'capitalize' }}>{profile.category}</p>
         </div>
         <div className="col-span-2">
-          <span className="text-gray-500">Target Audience</span>
-          <p className="text-white mt-1">{profile.target_audience}</p>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '1.5px', color: 'var(--text-muted)' }}>Target Audience</span>
+          <p style={{ color: 'var(--text)', marginTop: '4px' }}>{profile.target_audience}</p>
         </div>
         <div className="col-span-2">
-          <span className="text-gray-500">Key Value Props</span>
+          <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '1.5px', color: 'var(--text-muted)' }}>Key Value Props</span>
           <ul className="mt-1 space-y-1">
             {profile.key_value_props.map((prop, i) => (
-              <li key={i} className="text-white">&bull; {prop}</li>
+              <li key={i} style={{ color: 'var(--text)' }}>&bull; {prop}</li>
             ))}
           </ul>
         </div>
       </div>
 
       {adCopy && (
-        <div className="border-t border-gray-800 pt-4 mt-4">
-          <h4 className="font-semibold text-sm text-gray-400 mb-3">Ad Copy</h4>
-          <div className="space-y-2 text-sm">
+        <div style={{ borderTop: '1px solid var(--card-border)', paddingTop: '16px', marginTop: '16px' }}>
+          <h4 style={{ fontFamily: 'var(--font-display)', fontSize: '16px', letterSpacing: '1px', color: 'var(--text)', marginBottom: '12px' }}>AD COPY</h4>
+          <div className="space-y-2" style={{ fontSize: '13px' }}>
             <div>
-              <span className="text-gray-500">Headline:</span>
-              <span className="text-white ml-2">{adCopy.headline}</span>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '1px', color: 'var(--text-muted)' }}>Headline:</span>
+              <span style={{ color: 'var(--text)', marginLeft: '8px', fontWeight: 600 }}>{adCopy.headline}</span>
             </div>
             <div>
-              <span className="text-gray-500">Primary text:</span>
-              <span className="text-white ml-2">{adCopy.primaryText}</span>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '1px', color: 'var(--text-muted)' }}>Primary text:</span>
+              <span style={{ color: 'var(--text)', marginLeft: '8px' }}>{adCopy.primaryText}</span>
             </div>
             <div>
-              <span className="text-gray-500">Description:</span>
-              <span className="text-white ml-2">{adCopy.description}</span>
+              <span style={{ fontFamily: 'var(--font-mono)', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '1px', color: 'var(--text-muted)' }}>Description:</span>
+              <span style={{ color: 'var(--text)', marginLeft: '8px' }}>{adCopy.description}</span>
             </div>
           </div>
         </div>
