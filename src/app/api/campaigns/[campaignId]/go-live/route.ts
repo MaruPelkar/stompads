@@ -7,11 +7,8 @@ import {
   createImageAdCreative,
   createVideoAdCreative,
   createAd,
-  buildTargeting,
 } from '@/lib/meta-ads'
-import type { BrandProfile } from '@/types/database'
-
-const PAGE_ID = process.env.META_PAGE_ID!
+import type { BrandProfile, AdCopy } from '@/types/database'
 
 export async function POST(
   request: NextRequest,
@@ -46,44 +43,59 @@ export async function POST(
   }
 
   const brandProfile = campaign.brand_profile as unknown as BrandProfile
-  const headline = `${brandProfile.product_name} — ${brandProfile.key_value_props[0]}`
-  const body = brandProfile.key_value_props.slice(0, 2).join('. ')
-  const targeting = buildTargeting()
+  const adCopy = campaign.ad_copy as unknown as AdCopy
+
+  const headline = adCopy?.headline || brandProfile.product_name
+  const primaryText = adCopy?.primaryText || brandProfile.key_value_props.slice(0, 2).join('. ')
+  const description = adCopy?.description || 'Learn more'
 
   try {
-    const metaCampaignId = await createCampaign(
-      `Stompads - ${brandProfile.product_name}`
-    )
+    let metaCampaignId = campaign.meta_campaign_id
+    if (!metaCampaignId) {
+      metaCampaignId = await createCampaign(`Stompads - ${brandProfile.product_name}`)
+    }
 
-    const metaAdSetId = await createAdSet(
-      metaCampaignId,
-      `Stompads AdSet - ${brandProfile.category}`,
-      campaign.daily_budget!,
-      targeting
-    )
+    const totalBudget = campaign.daily_budget!
+    const feedBudget = Math.round(totalBudget * 0.6)
+    const storiesBudget = totalBudget - feedBudget
+
+    const feedAdSetId = await createAdSet({
+      campaignId: metaCampaignId,
+      name: `${brandProfile.product_name} - Feed`,
+      dailyBudgetCents: feedBudget,
+      placements: 'feed',
+    })
+
+    const storiesAdSetId = await createAdSet({
+      campaignId: metaCampaignId,
+      name: `${brandProfile.product_name} - Stories & Reels`,
+      dailyBudgetCents: storiesBudget,
+      placements: 'stories_reels',
+    })
 
     await serviceClient
       .from('campaigns')
-      .update({ meta_campaign_id: metaCampaignId, meta_adset_id: metaAdSetId })
+      .update({ meta_campaign_id: metaCampaignId, meta_adset_id: feedAdSetId })
       .eq('id', params.campaignId)
 
     for (const ad of ads) {
       if (!ad.asset_url) continue
 
+      const adSetId = ad.placement === 'feed' ? feedAdSetId : storiesAdSetId
       let creativeId: string
 
       if (ad.type === 'image') {
         const imageHash = await uploadAdImage(ad.asset_url)
         creativeId = await createImageAdCreative(
-          imageHash, headline, body, campaign.url, PAGE_ID
+          imageHash, headline, primaryText, description, campaign.url
         )
       } else {
         creativeId = await createVideoAdCreative(
-          ad.asset_url, headline, body, campaign.url, PAGE_ID
+          ad.asset_url, headline, primaryText, description, campaign.url
         )
       }
 
-      const metaAdId = await createAd(metaAdSetId, creativeId, `Stompads Ad ${ad.id}`)
+      const metaAdId = await createAd(adSetId, creativeId, `${brandProfile.product_name} - ${ad.type} ${ad.aspect_ratio}`)
 
       await serviceClient
         .from('ads')

@@ -1,6 +1,7 @@
 const META_API_BASE = 'https://graph.facebook.com/v19.0'
 const AD_ACCOUNT_ID = `act_${process.env.META_AD_ACCOUNT_ID!}`
 const ACCESS_TOKEN = process.env.META_ACCESS_TOKEN!
+const PAGE_ID = process.env.META_PAGE_ID!
 
 async function metaFetch(path: string, method: 'GET' | 'POST' = 'POST', body?: Record<string, unknown>) {
   const url = `${META_API_BASE}${path}`
@@ -32,16 +33,20 @@ export async function createCampaign(name: string): Promise<string> {
   return data.id
 }
 
-export async function createAdSet(
-  campaignId: string,
-  name: string,
-  dailyBudgetCents: number,
-  targeting: Record<string, unknown>
-): Promise<string> {
+interface AdSetConfig {
+  campaignId: string
+  name: string
+  dailyBudgetCents: number
+  placements: 'feed' | 'stories_reels'
+}
+
+export async function createAdSet(config: AdSetConfig): Promise<string> {
+  const targeting = buildTargeting(config.placements)
+
   const data = await metaFetch(`/${AD_ACCOUNT_ID}/adsets`, 'POST', {
-    name,
-    campaign_id: campaignId,
-    daily_budget: dailyBudgetCents,
+    name: config.name,
+    campaign_id: config.campaignId,
+    daily_budget: config.dailyBudgetCents,
     billing_event: 'IMPRESSIONS',
     optimization_goal: 'LINK_CLICKS',
     bid_strategy: 'LOWEST_COST_WITHOUT_CAP',
@@ -49,6 +54,30 @@ export async function createAdSet(
     status: 'ACTIVE',
   })
   return data.id
+}
+
+function buildTargeting(placements: 'feed' | 'stories_reels'): Record<string, unknown> {
+  const base = {
+    geo_locations: { countries: ['US'] },
+    age_min: 18,
+    age_max: 65,
+  }
+
+  if (placements === 'feed') {
+    return {
+      ...base,
+      publisher_platforms: ['facebook', 'instagram'],
+      facebook_positions: ['feed'],
+      instagram_positions: ['stream'],
+    }
+  }
+
+  return {
+    ...base,
+    publisher_platforms: ['facebook', 'instagram'],
+    facebook_positions: ['story'],
+    instagram_positions: ['story', 'reels'],
+  }
 }
 
 export async function uploadAdImage(imageUrl: string): Promise<string> {
@@ -67,19 +96,20 @@ export async function uploadAdImage(imageUrl: string): Promise<string> {
 export async function createImageAdCreative(
   imageHash: string,
   headline: string,
-  body: string,
+  primaryText: string,
+  description: string,
   websiteUrl: string,
-  pageId: string
 ): Promise<string> {
   const data = await metaFetch(`/${AD_ACCOUNT_ID}/adcreatives`, 'POST', {
-    name: `Stompads Image Creative ${Date.now()}`,
+    name: `Stompads Image ${Date.now()}`,
     object_story_spec: {
-      page_id: pageId,
+      page_id: PAGE_ID,
       link_data: {
         image_hash: imageHash,
         link: websiteUrl,
-        message: body,
+        message: primaryText,
         name: headline,
+        description: description,
         call_to_action: { type: 'LEARN_MORE', value: { link: websiteUrl } },
       },
     },
@@ -90,25 +120,24 @@ export async function createImageAdCreative(
 export async function createVideoAdCreative(
   videoUrl: string,
   headline: string,
-  body: string,
+  primaryText: string,
+  description: string,
   websiteUrl: string,
-  pageId: string
 ): Promise<string> {
   const uploadData = await metaFetch(`/${AD_ACCOUNT_ID}/advideos`, 'POST', {
     file_url: videoUrl,
     name: `Stompads Video ${Date.now()}`,
   })
-
   const videoId = uploadData.id
 
   const data = await metaFetch(`/${AD_ACCOUNT_ID}/adcreatives`, 'POST', {
-    name: `Stompads Video Creative ${Date.now()}`,
+    name: `Stompads Video ${Date.now()}`,
     object_story_spec: {
-      page_id: pageId,
+      page_id: PAGE_ID,
       video_data: {
         video_id: videoId,
         title: headline,
-        message: body,
+        message: primaryText,
         call_to_action: { type: 'LEARN_MORE', value: { link: websiteUrl } },
       },
     },
@@ -124,15 +153,4 @@ export async function createAd(adSetId: string, creativeId: string, name: string
     status: 'ACTIVE',
   })
   return data.id
-}
-
-export function buildTargeting(): Record<string, unknown> {
-  return {
-    geo_locations: { countries: ['US'] },
-    age_min: 18,
-    age_max: 65,
-    publisher_platforms: ['facebook', 'instagram'],
-    facebook_positions: ['feed', 'story'],
-    instagram_positions: ['stream', 'story'],
-  }
 }
