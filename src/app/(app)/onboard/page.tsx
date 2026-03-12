@@ -3,16 +3,15 @@
 import { Suspense, useState, useEffect, useRef, useCallback } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { UrlForm } from '@/components/onboard/UrlForm'
-import { BrandProfileCard } from '@/components/onboard/BrandProfileCard'
 import { AdPreview } from '@/components/onboard/AdPreview'
 import { BudgetForm } from '@/components/onboard/BudgetForm'
-import type { BrandProfile, Ad, AdCopy } from '@/types/database'
+import type { Ad } from '@/types/database'
 
 type Step = 'url' | 'generating' | 'preview' | 'checkout'
 
 const PROGRESS_STEPS = [
-  { key: 'scrape', label: 'Scraping your website' },
-  { key: 'profile', label: 'Building brand profile' },
+  { key: 'scrape', label: 'Looking at your website' },
+  { key: 'profile', label: 'Understanding your brand' },
   { key: 'scripts', label: 'Writing ad scripts' },
   { key: 'video1', label: 'Generating video 1' },
   { key: 'video2', label: 'Generating video 2' },
@@ -30,8 +29,7 @@ export default function OnboardPage() {
 function OnboardContent() {
   const [step, setStep] = useState<Step>('url')
   const [campaignId, setCampaignId] = useState<string | null>(null)
-  const [brandProfile, setBrandProfile] = useState<BrandProfile | null>(null)
-  const [adCopy, setAdCopy] = useState<AdCopy | null>(null)
+  const [hasProfile, setHasProfile] = useState(false)
   const [ads, setAds] = useState<Ad[]>([])
   const [error, setError] = useState<string | null>(null)
   const [progressIndex, setProgressIndex] = useState(0)
@@ -47,17 +45,14 @@ function OnboardContent() {
 
       const data = await res.json()
 
-      if (data.brandProfile && !brandProfile) {
-        setBrandProfile(data.brandProfile)
-        setAdCopy(data.adCopy)
+      if (data.brandProfile && !hasProfile) {
+        setHasProfile(true)
         setProgressIndex(3) // Jump to "Generating video 1"
       }
 
       if (data.status === 'ready' && data.ads?.length > 0) {
         if (pollingRef.current) clearInterval(pollingRef.current)
         if (progressRef.current) clearInterval(progressRef.current)
-        setBrandProfile(data.brandProfile)
-        setAdCopy(data.adCopy)
         setAds(data.ads)
         setStep('preview')
       } else if (data.status === 'draft') {
@@ -70,7 +65,7 @@ function OnboardContent() {
       // Keep polling
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [brandProfile])
+  }, [hasProfile])
 
   useEffect(() => {
     return () => {
@@ -92,8 +87,7 @@ function OnboardContent() {
     setStep('generating')
     setError(null)
     setProgressIndex(0)
-    setBrandProfile(null)
-    setAdCopy(null)
+    setHasProfile(false)
     setAds([])
 
     // Simulate progress through steps (actual progress comes from polling)
@@ -180,18 +174,17 @@ function OnboardContent() {
             ))}
           </div>
 
-          {/* Show brand profile early */}
-          {brandProfile && (
-            <div className="mt-8 text-left max-w-2xl mx-auto">
-              <BrandProfileCard profile={brandProfile} adCopy={adCopy} />
-            </div>
+          {/* Brand profile loaded — videos still generating */}
+          {hasProfile && (
+            <p style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-muted)', marginTop: '20px', letterSpacing: '0.5px' }}>
+              We understood your brand. Now creating your ads...
+            </p>
           )}
         </div>
       )}
 
-      {step === 'preview' && brandProfile && (
+      {step === 'preview' && ads.length > 0 && (
         <>
-          <BrandProfileCard profile={brandProfile} adCopy={adCopy} />
           <AdPreview ads={ads} />
           <BudgetForm onSubmit={handleBudgetSubmit} loading={false} />
         </>
