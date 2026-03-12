@@ -50,52 +50,44 @@ export async function POST(
   const description = adCopy?.description || 'Learn more'
 
   try {
+    // Reuse existing campaign or create new one
     let metaCampaignId = campaign.meta_campaign_id
     if (!metaCampaignId) {
       metaCampaignId = await createCampaign(`Stompads - ${brandProfile.product_name}`)
     }
 
-    const totalBudget = campaign.daily_budget!
-    const feedBudget = Math.round(totalBudget * 0.6)
-    const storiesBudget = totalBudget - feedBudget
-
-    const feedAdSetId = await createAdSet({
-      campaignId: metaCampaignId,
-      name: `${brandProfile.product_name} - Feed`,
-      dailyBudgetCents: feedBudget,
-      placements: 'feed',
-    })
-
+    // Video only — all budget goes to Stories & Reels
     const storiesAdSetId = await createAdSet({
       campaignId: metaCampaignId,
       name: `${brandProfile.product_name} - Stories & Reels`,
-      dailyBudgetCents: storiesBudget,
+      dailyBudgetCents: campaign.daily_budget!,
       placements: 'stories_reels',
     })
 
     await serviceClient
       .from('campaigns')
-      .update({ meta_campaign_id: metaCampaignId, meta_adset_id: feedAdSetId })
+      .update({ meta_campaign_id: metaCampaignId, meta_adset_id: storiesAdSetId })
       .eq('id', params.campaignId)
 
+    // All ads go to stories/reels ad set (video only for now)
     for (const ad of ads) {
       if (!ad.asset_url) continue
 
-      const adSetId = ad.placement === 'feed' ? feedAdSetId : storiesAdSetId
       let creativeId: string
 
-      if (ad.type === 'image') {
+      if (ad.type === 'video') {
+        creativeId = await createVideoAdCreative(
+          ad.asset_url, headline, primaryText, description, campaign.url
+        )
+      } else {
+        // Image ads (not generated for now, but handle gracefully if they exist)
         const imageHash = await uploadAdImage(ad.asset_url)
         creativeId = await createImageAdCreative(
           imageHash, headline, primaryText, description, campaign.url
         )
-      } else {
-        creativeId = await createVideoAdCreative(
-          ad.asset_url, headline, primaryText, description, campaign.url
-        )
       }
 
-      const metaAdId = await createAd(adSetId, creativeId, `${brandProfile.product_name} - ${ad.type} ${ad.aspect_ratio}`)
+      const metaAdId = await createAd(storiesAdSetId, creativeId, `${brandProfile.product_name} - ${ad.type} ${ad.aspect_ratio}`)
 
       await serviceClient
         .from('ads')

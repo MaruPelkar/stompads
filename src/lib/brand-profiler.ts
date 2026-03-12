@@ -87,10 +87,34 @@ IMPORTANT for ad_copy:
   return result
 }
 
-export async function generateVideoScript(brandProfile: BrandProfile): Promise<string> {
-  const trace = langfuse.trace({ name: 'generate-video-script' })
+const VIDEO_SETTINGS = [
+  'walking on a busy city street heading to the office, talking into selfie camera',
+  'standing in front of their wardrobe mirror in a well-lit bedroom, talking into phone camera',
+  'sitting at a cafe table with a laptop and coffee, leaning into the phone camera',
+]
 
-  const prompt = `Write a 10-second UGC-style video ad script for a person talking directly into the camera about this product.
+const VIDEO_HOOKS = [
+  "You would NOT believe what I just found...",
+  "Okay this has GOT to be the biggest catch of 2026...",
+  "Stop scrolling. I need to tell you about this...",
+  "I was today years old when I discovered this...",
+  "Why did nobody tell me about this sooner...",
+]
+
+export async function generateVideoScripts(brandProfile: BrandProfile): Promise<{ script: string; setting: string }[]> {
+  const trace = langfuse.trace({ name: 'generate-video-scripts' })
+
+  // Pick 2 random settings and 2 random hooks (no duplicates)
+  const shuffledSettings = [...VIDEO_SETTINGS].sort(() => Math.random() - 0.5).slice(0, 2)
+  const shuffledHooks = [...VIDEO_HOOKS].sort(() => Math.random() - 0.5).slice(0, 2)
+
+  const scripts: { script: string; setting: string }[] = []
+
+  for (let i = 0; i < 2; i++) {
+    const setting = shuffledSettings[i]
+    const hook = shuffledHooks[i]
+
+    const prompt = `Write a 12-second UGC-style video ad script. The person is ${setting}.
 
 Product: ${brandProfile.product_name}
 Category: ${brandProfile.category}
@@ -98,38 +122,42 @@ Target audience: ${brandProfile.target_audience}
 Key benefits: ${brandProfile.key_value_props.join(', ')}
 Tone: ${brandProfile.tone}
 
-The script should:
-- Start with a catchy hook like "you're not gonna believe this..." or "I wish someone told me about this sooner..."
-- Be spoken by an attractive, relatable person
-- Sound natural and authentic, like a real person sharing a discovery
-- Mention the product name and one key benefit
-- End with a soft CTA like "just try it" or "thank me later"
-- Be about 30-40 words total (10 seconds of speech)
+The script MUST:
+- Start with this exact hook: "${hook}"
+- Be spoken by an attractive, relatable person directly into camera
+- Sound completely natural, like texting a friend about a discovery
+- Mention the product name "${brandProfile.product_name}" and one specific benefit
+- End with a soft CTA like "just try it" or "thank me later" or "link in bio"
+- Be exactly 40-50 words (12 seconds of natural speech)
+- Include natural pauses and emphasis (the way real people talk)
 
-Return ONLY the script text, nothing else. No stage directions, no brackets.`
+Return ONLY the script text. No stage directions, no quotes, no brackets.`
 
-  const generation = trace.generation({
-    name: 'claude-video-script',
-    model: 'claude-sonnet-4-6',
-    input: [{ role: 'user', content: prompt }],
-  })
+    const generation = trace.generation({
+      name: `claude-video-script-${i + 1}`,
+      model: 'claude-sonnet-4-6',
+      input: [{ role: 'user', content: prompt }],
+    })
 
-  const message = await anthropic.messages.create({
-    model: 'claude-sonnet-4-6',
-    max_tokens: 256,
-    messages: [{ role: 'user', content: prompt }],
-  })
+    const message = await anthropic.messages.create({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 256,
+      messages: [{ role: 'user', content: prompt }],
+    })
 
-  const script = message.content[0].type === 'text' ? message.content[0].text.trim() : ''
+    const script = message.content[0].type === 'text' ? message.content[0].text.trim() : ''
 
-  generation.end({
-    output: script,
-    usage: {
-      input: message.usage.input_tokens,
-      output: message.usage.output_tokens,
-    },
-  })
+    generation.end({
+      output: script,
+      usage: {
+        input: message.usage.input_tokens,
+        output: message.usage.output_tokens,
+      },
+    })
+
+    scripts.push({ script, setting })
+  }
+
   await langfuse.flushAsync()
-
-  return script
+  return scripts
 }

@@ -126,7 +126,7 @@ export async function POST(request: NextRequest) {
 
   // Step 6: Generate ads (using our stored Supabase URLs as references)
   try {
-    await generateCampaignAds(campaign.id, brandProfile, storedAssets)
+    await generateCampaignAds(campaign.id, brandProfile)
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Unknown generation error'
     await fail('AD_GENERATION_FAILED', msg)
