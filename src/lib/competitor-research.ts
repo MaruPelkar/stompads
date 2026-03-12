@@ -1,6 +1,8 @@
 // Meta Ad Library API — public, no special approval needed
 // Docs: https://www.facebook.com/ads/library/api/
 
+import { langfuse } from './langfuse'
+
 const META_API_BASE = 'https://graph.facebook.com/v19.0'
 
 export interface CompetitorAd {
@@ -17,8 +19,17 @@ interface MetaAdResponse {
   ad_snapshot_url?: string
 }
 
-export async function findCompetitorAds(_category: string, keywords: string[]): Promise<CompetitorAd[]> {
+export async function findCompetitorAds(_category: string, keywords: string[], traceId?: string): Promise<CompetitorAd[]> {
+  const trace = traceId
+    ? langfuse.trace({ id: traceId })
+    : langfuse.trace({ name: 'competitor-research' })
+
   const searchTerms = keywords.slice(0, 3).join(' ')
+
+  const span = trace.span({
+    name: 'meta-ad-library-search',
+    input: { searchTerms, category: _category },
+  })
 
   const params = new URLSearchParams({
     access_token: process.env.META_ACCESS_TOKEN!,
@@ -33,15 +44,21 @@ export async function findCompetitorAds(_category: string, keywords: string[]): 
   const data = await res.json()
 
   if (data.error) {
-    // Non-fatal: log and return empty — ad generation continues without competitor data
     console.warn('Meta Ad Library fetch failed:', data.error.message)
+    span.end({ output: { error: data.error.message } })
+    await langfuse.flushAsync()
     return []
   }
 
-  return (data.data || []).map((ad: MetaAdResponse) => ({
+  const ads = (data.data || []).map((ad: MetaAdResponse) => ({
     id: ad.id,
     page_name: ad.page_name,
     ad_creative_body: ad.ad_creative_bodies?.[0],
     ad_snapshot_url: ad.ad_snapshot_url,
   }))
+
+  span.end({ output: { count: ads.length } })
+  await langfuse.flushAsync()
+
+  return ads
 }

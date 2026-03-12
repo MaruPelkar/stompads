@@ -1,4 +1,5 @@
 import { fal } from '@fal-ai/client'
+import { langfuse } from './langfuse'
 
 fal.config({ credentials: process.env.FAL_KEY! })
 
@@ -21,7 +22,17 @@ export interface GeneratedAd {
   requestId: string
 }
 
-export async function generateImageAd(prompt: string, referenceImageUrls?: string[]): Promise<GeneratedAd> {
+export async function generateImageAd(prompt: string, referenceImageUrls?: string[], traceId?: string): Promise<GeneratedAd> {
+  const trace = traceId
+    ? langfuse.trace({ id: traceId })
+    : langfuse.trace({ name: 'generate-image-ad' })
+
+  const span = trace.span({
+    name: 'fal-image-generation',
+    metadata: { model: FAL_IMAGE_MODEL, hasReferenceImages: !!referenceImageUrls?.length },
+    input: { prompt, referenceImageUrls },
+  })
+
   const input: Record<string, unknown> = {
     prompt,
     aspect_ratio: '1:1',
@@ -29,7 +40,6 @@ export async function generateImageAd(prompt: string, referenceImageUrls?: strin
     num_images: 1,
   }
 
-  // If we have reference images (e.g. from OG image or ad library), use the edit model
   if (referenceImageUrls && referenceImageUrls.length > 0) {
     input.image_urls = referenceImageUrls
   }
@@ -38,7 +48,14 @@ export async function generateImageAd(prompt: string, referenceImageUrls?: strin
   const data = result.data as FalImageOutput
 
   const imageUrl = data?.images?.[0]?.url
-  if (!imageUrl) throw new Error('No image URL in Fal.ai response')
+  if (!imageUrl) {
+    span.end({ output: { error: 'No image URL in response' } })
+    await langfuse.flushAsync()
+    throw new Error('No image URL in Fal.ai response')
+  }
+
+  span.end({ output: { url: imageUrl, requestId: result.requestId } })
+  await langfuse.flushAsync()
 
   return {
     url: imageUrl,
@@ -47,19 +64,36 @@ export async function generateImageAd(prompt: string, referenceImageUrls?: strin
   }
 }
 
-export async function generateVideoAd(prompt: string): Promise<GeneratedAd> {
+export async function generateVideoAd(prompt: string, traceId?: string): Promise<GeneratedAd> {
+  const trace = traceId
+    ? langfuse.trace({ id: traceId })
+    : langfuse.trace({ name: 'generate-video-ad' })
+
+  const span = trace.span({
+    name: 'fal-video-generation',
+    metadata: { model: FAL_VIDEO_MODEL },
+    input: { prompt },
+  })
+
   const result = await fal.subscribe(FAL_VIDEO_MODEL, {
     input: {
       prompt,
-      duration: '12' as const, // max duration available (4, 8, or 12 seconds)
-      aspect_ratio: '9:16',   // vertical for mobile feed
-      resolution: '720p',     // cheaper, good enough for ads
+      duration: '12' as const,
+      aspect_ratio: '9:16',
+      resolution: '720p',
     },
   })
   const data = result.data as FalVideoOutput
 
   const videoUrl = data?.video?.url
-  if (!videoUrl) throw new Error('No video URL in Fal.ai response')
+  if (!videoUrl) {
+    span.end({ output: { error: 'No video URL in response' } })
+    await langfuse.flushAsync()
+    throw new Error('No video URL in Fal.ai response')
+  }
+
+  span.end({ output: { url: videoUrl, requestId: result.requestId } })
+  await langfuse.flushAsync()
 
   return {
     url: videoUrl,
