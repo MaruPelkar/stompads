@@ -124,7 +124,6 @@ export async function createVideoAdCreative(
   primaryText: string,
   description: string,
   websiteUrl: string,
-  brandFallbackImageUrl?: string,
 ): Promise<string> {
   // Step 1: Upload video
   const uploadData = await metaFetch(`/${AD_ACCOUNT_ID}/advideos`, 'POST', {
@@ -133,9 +132,10 @@ export async function createVideoAdCreative(
   })
   const videoId = uploadData.id
 
-  // Step 2: Wait for Meta to process video, then get auto-generated thumbnail (first frame)
+  // Step 2: Wait for Meta to process video, then get its first frame as thumbnail
+  // ONLY use the video's own thumbnail — never use external/brand images
   let imageHash: string | null = null
-  for (let attempt = 0; attempt < 8; attempt++) {
+  for (let attempt = 0; attempt < 12; attempt++) {
     await new Promise(r => setTimeout(r, 3000))
     try {
       const videoInfo = await metaFetch(`/${videoId}?fields=thumbnails,picture`, 'GET')
@@ -145,21 +145,15 @@ export async function createVideoAdCreative(
         break
       }
     } catch {
-      // Not ready yet
+      // Not ready yet — keep polling
     }
   }
 
-  // Fallback: use brand's OG image or logo
-  if (!imageHash && brandFallbackImageUrl) {
-    console.warn('[META] Could not extract video thumbnail, using brand image fallback')
-    try {
-      imageHash = await uploadThumbnailFromUrl(brandFallbackImageUrl)
-    } catch {
-      console.warn('[META] Brand image fallback also failed')
-    }
+  if (!imageHash) {
+    throw new Error(`Could not extract thumbnail from video ${videoId} after 36 seconds. Video may still be processing on Meta.`)
   }
 
-  // Step 3: Create creative
+  // Step 3: Create creative — each creative is unique to this campaign's video
   const data = await metaFetch(`/${AD_ACCOUNT_ID}/adcreatives`, 'POST', {
     name: `Stompads Video ${Date.now()}`,
     object_story_spec: {

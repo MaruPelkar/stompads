@@ -46,8 +46,6 @@ export async function POST(
 
   const brandProfile = campaign.brand_profile as unknown as BrandProfile
   const adCopy = campaign.ad_copy as unknown as AdCopy
-  const brandAssets = campaign.brand_assets as unknown as { ogImage?: string; logoUrl?: string; productImages?: string[] } | null
-  const brandFallbackImage = brandAssets?.ogImage || brandAssets?.logoUrl || brandAssets?.productImages?.[0] || undefined
 
   const headline = adCopy?.headline || brandProfile.product_name
   const primaryText = adCopy?.primaryText || brandProfile.key_value_props.slice(0, 2).join('. ')
@@ -91,7 +89,7 @@ export async function POST(
 
       if (ad.type === 'video') {
         creativeId = await createVideoAdCreative(
-          ad.asset_url, headline, primaryText, description, campaign.url, brandFallbackImage
+          ad.asset_url, headline, primaryText, description, campaign.url
         )
       } else {
         const imageHash = await uploadAdImage(ad.asset_url)
