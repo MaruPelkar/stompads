@@ -177,7 +177,7 @@ async function addSubtitles(
         language: sub.language,
         font_name: sub.fontName,
         font_size: sub.fontSize,
-        font_weight: sub.fontWeight,
+        font_weight: sub.fontWeight as 'bold' | 'normal' | 'black',
         font_color: sub.fontColor,
         highlight_color: sub.highlightColor,
         stroke_width: sub.strokeWidth,
