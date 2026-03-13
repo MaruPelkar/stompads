@@ -181,7 +181,7 @@ async function addSubtitles(
         stroke_color: 'black',
         background_color: 'none',
         position: 'bottom',
-        y_offset: 75,
+        y_offset: 190,
         words_per_subtitle: 3,
         enable_animation: true,
       },
