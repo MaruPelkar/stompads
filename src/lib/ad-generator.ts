@@ -45,8 +45,8 @@ export async function generateCampaignAds(
     buildVideoPrompt(script, setting, brandProfile)
   )
 
-  // Generate videos sequentially — save each to DB immediately so progress is visible
-  // and partial results survive if the function times out
+  // Generate videos sequentially — save each to DB immediately
+  // Mark campaign as 'ready' after EACH successful ad so partial results are usable
   let adsGenerated = 0
   const errors: string[] = []
 
@@ -68,6 +68,13 @@ export async function generateCampaignAds(
         meta_creative_id: null,
       })
       adsGenerated++
+
+      // Mark ready after each successful ad — if function times out on the next one,
+      // the campaign is still usable with the ads generated so far
+      await supabase
+        .from('campaigns')
+        .update({ status: 'ready' })
+        .eq('id', campaignId)
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err)
       console.error(`[AD_GEN_FAIL] video ${i + 1}: ${msg}`)
@@ -80,11 +87,6 @@ export async function generateCampaignAds(
     await langfuse.flushAsync()
     throw new Error(`All video generations failed: ${errors.join('; ')}`)
   }
-
-  await supabase
-    .from('campaigns')
-    .update({ status: 'ready' })
-    .eq('id', campaignId)
 
   trace.update({ output: { adsGenerated, failed: errors.length, errors } })
   await langfuse.flushAsync()
