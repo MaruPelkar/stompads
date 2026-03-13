@@ -43,11 +43,12 @@ export async function createCampaignWithBudget(name: string, dailyBudgetCents: n
     status: 'ACTIVE',
     special_ad_categories: '[]',
     daily_budget: dailyBudgetCents,
+    bid_strategy: 'LOWEST_COST_WITHOUT_CAP',
   })
   return data.id
 }
 
-// ─── AD SET (no budget — campaign controls it) ───
+// ─── AD SET (no budget, no bid — campaign controls both) ───
 
 export async function createAdSet(
   campaignId: string,
@@ -58,8 +59,6 @@ export async function createAdSet(
     campaign_id: campaignId,
     billing_event: 'IMPRESSIONS',
     optimization_goal: 'LINK_CLICKS',
-    bid_strategy: 'LOWEST_COST_WITHOUT_CAP',
-    // Advantage+ targeting — let Meta optimize everything
     targeting: {
       geo_locations: { countries: ['US'] },
     },
