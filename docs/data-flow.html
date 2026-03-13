@@ -1,0 +1,819 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StompAds - Data Flow</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #FFFCF8;
+    --orange: #FF4D00;
+    --text: #1a1a1a;
+    --text-light: #666;
+    --text-muted: #999;
+    --card-bg: #fff;
+    --card-border: rgba(0,0,0,0.08);
+    --green: #22c55e;
+    --blue: #3b82f6;
+    --purple: #8b5cf6;
+    --red: #ef4444;
+    --yellow: #f59e0b;
+    --pink: #ec4899;
+    --cyan: #06b6d4;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Bricolage Grotesque', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+  }
+  nav {
+    position: sticky; top: 0; z-index: 100;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 40px;
+    border-bottom: 1px solid var(--card-border);
+    background: rgba(255,252,248,0.92);
+    backdrop-filter: blur(16px);
+  }
+  .nav-brand {
+    font-size: 22px; font-weight: 800; letter-spacing: 2px;
+    color: var(--text); text-decoration: none;
+  }
+  .nav-brand span { color: var(--orange); }
+  .nav-links { display: flex; gap: 6px; }
+  .nav-links a {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px; letter-spacing: 1px; text-transform: uppercase;
+    padding: 8px 16px; border-radius: 8px;
+    text-decoration: none; color: var(--text);
+    border: 1px solid var(--card-border);
+    transition: all 0.2s;
+  }
+  .nav-links a:hover { border-color: var(--orange); color: var(--orange); }
+  .nav-links a.active { background: var(--orange); color: #fff; border-color: var(--orange); }
+
+  .container { max-width: 1200px; margin: 0 auto; padding: 40px 24px 80px; }
+  h1 { font-size: 48px; font-weight: 800; letter-spacing: -1px; margin-bottom: 8px; }
+  h1 span { color: var(--orange); }
+  .subtitle { font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: var(--text-light); letter-spacing: 0.5px; margin-bottom: 48px; }
+
+  .flow-section {
+    margin-bottom: 56px;
+    border: 1px solid var(--card-border);
+    border-radius: 16px;
+    background: var(--card-bg);
+    overflow: hidden;
+  }
+  .flow-header {
+    padding: 20px 28px;
+    border-bottom: 1px solid var(--card-border);
+    display: flex; align-items: center; gap: 12px;
+  }
+  .flow-header .icon {
+    width: 36px; height: 36px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; color: #fff; flex-shrink: 0;
+  }
+  .flow-header h2 { font-size: 20px; font-weight: 700; letter-spacing: 1px; }
+  .flow-header .desc {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px; color: var(--text-muted); letter-spacing: 0.5px;
+  }
+
+  .flow-body { padding: 28px; }
+
+  .pipeline {
+    display: flex; align-items: stretch; gap: 0;
+    overflow-x: auto; padding-bottom: 8px;
+  }
+  .step {
+    flex: 0 0 auto; min-width: 160px; max-width: 200px;
+    position: relative; padding: 16px;
+    border: 1px solid var(--card-border); border-radius: 12px;
+    background: var(--bg);
+  }
+  .step .step-num {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px; font-weight: 600; letter-spacing: 1px;
+    color: var(--text-muted); text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .step .step-title {
+    font-size: 14px; font-weight: 700; margin-bottom: 6px;
+  }
+  .step .step-detail {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px; color: var(--text-light); line-height: 1.5;
+  }
+  .step .api-badge, .step .lib-badge, .step .db-badge, .step .ext-badge {
+    display: inline-block; padding: 2px 6px; border-radius: 4px;
+    font-family: 'IBM Plex Mono', monospace; font-size: 9px;
+    font-weight: 600; margin-top: 4px; margin-right: 3px;
+  }
+  .api-badge { background: #dbeafe; color: #1e40af; }
+  .lib-badge { background: #fae8ff; color: #7c3aed; }
+  .db-badge { background: #dcfce7; color: #166534; }
+  .ext-badge { background: #fef3c7; color: #92400e; }
+
+  .arrow {
+    flex: 0 0 40px; display: flex; align-items: center; justify-content: center;
+    color: var(--orange); font-size: 20px; font-weight: 800;
+  }
+
+  .status-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 10px;
+  }
+  .status-chip {
+    padding: 10px 14px; border-radius: 10px;
+    border: 1px solid var(--card-border); background: var(--bg);
+    font-family: 'IBM Plex Mono', monospace; font-size: 11px;
+  }
+  .status-chip .status-name { font-weight: 600; margin-bottom: 2px; }
+  .status-chip .status-desc { font-size: 9px; color: var(--text-muted); }
+
+  .db-table-grid {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 14px; margin-top: 20px;
+  }
+  .db-table-card {
+    padding: 16px; border-radius: 12px;
+    border: 1px solid var(--card-border); background: var(--bg);
+  }
+  .db-table-card h4 {
+    font-size: 14px; font-weight: 700; margin-bottom: 8px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .db-table-card h4 .dot {
+    width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+  }
+  .db-table-card ul {
+    list-style: none; padding: 0;
+    font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--text-light);
+  }
+  .db-table-card li { padding: 2px 0; }
+  .db-table-card li .col-type { color: var(--text-muted); }
+
+  @media (max-width: 768px) {
+    nav { padding: 12px 16px; }
+    .container { padding: 24px 16px 60px; }
+    h1 { font-size: 32px; }
+    .pipeline { flex-direction: column; }
+    .arrow { transform: rotate(90deg); flex: 0 0 30px; }
+  }
+</style>
+</head>
+<body>
+<nav>
+  <a href="data-flow.html" class="nav-brand">STOMP<span>ADS</span> <span style="font-size:12px;font-weight:400;letter-spacing:0;color:var(--text-muted)">docs</span></a>
+  <div class="nav-links">
+    <a href="data-flow.html" class="active">Data Flow</a>
+    <a href="codebase.html">Codebase</a>
+    <a href="ui-map.html">UI Map</a>
+  </div>
+</nav>
+
+<div class="container">
+  <h1>DATA <span>FLOW</span></h1>
+  <p class="subtitle">Complete pipeline from URL to live Meta ads, with every API route, lib file, and database table mapped.</p>
+
+  <!-- ============================================ -->
+  <!-- FLOW 1: AUTH -->
+  <!-- ============================================ -->
+  <div class="flow-section">
+    <div class="flow-header">
+      <div class="icon" style="background:var(--blue);">1</div>
+      <div>
+        <h2>USER SIGNUP / LOGIN</h2>
+        <div class="desc">Supabase Auth via email + password. Middleware protects app routes.</div>
+      </div>
+    </div>
+    <div class="flow-body">
+      <div class="pipeline">
+        <div class="step">
+          <div class="step-num">Entry</div>
+          <div class="step-title">Landing Page</div>
+          <div class="step-detail">
+            User enters URL or clicks "Launch My Ads". Checks auth state via Supabase client.
+          </div>
+          <span class="lib-badge">supabase/client</span>
+        </div>
+        <div class="arrow">&rarr;</div>
+        <div class="step">
+          <div class="step-num">If not logged in</div>
+          <div class="step-title">Signup / Login</div>
+          <div class="step-detail">
+            supabase.auth.signUp() or signInWithPassword(). Signup accepts ?redirect param to preserve URL.
+          </div>
+          <span class="lib-badge">supabase/client</span>
+          <span class="ext-badge">Supabase Auth</span>
+        </div>
+        <div class="arrow">&rarr;</div>
+        <div class="step">
+          <div class="step-num">Middleware</div>
+          <div class="step-title">Route Protection</div>
+          <div class="step-detail">
+            middleware.ts intercepts requests. Protected: /dashboard, /onboard, /admin. Logged-in users redirect away from /login, /signup. Excludes /api/webhooks.
+          </div>
+          <span class="lib-badge">middleware.ts</span>
+          <span class="ext-badge">Supabase SSR</span>
+        </div>
+        <div class="arrow">&rarr;</div>
+        <div class="step">
+          <div class="step-num">Destination</div>
+          <div class="step-title">Dashboard or Onboard</div>
+          <div class="step-detail">
+            Login redirects to /dashboard. Signup redirects to ?redirect param (usually /onboard?url=...) or /onboard.
+          </div>
+          <span class="db-badge">profiles</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- FLOW 2: CAMPAIGN CREATION -->
+  <!-- ============================================ -->
+  <div class="flow-section">
+    <div class="flow-header">
+      <div class="icon" style="background:var(--orange);">2</div>
+      <div>
+        <h2>CAMPAIGN CREATION PIPELINE</h2>
+        <div class="desc">URL &rarr; Scrape &rarr; Brand Profile &rarr; Competitor Research &rarr; Asset Storage &rarr; Video Generation &rarr; Save</div>
+      </div>
+    </div>
+    <div class="flow-body">
+      <div class="pipeline">
+        <div class="step">
+          <div class="step-num">Step 1</div>
+          <div class="step-title">Submit URL</div>
+          <div class="step-detail">
+            Onboard page calls POST /api/campaigns/create with { url }. Inserts campaign row with status="generating". Returns campaignId immediately.
+          </div>
+          <span class="api-badge">POST /api/campaigns/create</span>
+          <span class="db-badge">campaigns INSERT</span>
+        </div>
+        <div class="arrow">&rarr;</div>
+        <div class="step">
+          <div class="step-num">Step 2</div>
+          <div class="step-title">Trigger Processing</div>
+          <div class="step-detail">
+            /create fires server-to-server POST to /api/campaigns/[id]/process (non-blocking, forwards auth cookies). Client polls /status every 3s.
+          </div>
+          <span class="api-badge">POST .../process</span>
+          <span class="api-badge">GET .../status</span>
+        </div>
+        <div class="arrow">&rarr;</div>
+        <div class="step">
+          <div class="step-num">Step 3</div>
+          <div class="step-title">Scrape Website</div>
+          <div class="step-detail">
+            scraper.ts calls Firecrawl with markdown + JSON extraction. Extracts: logo, favicon, product images, brand colors, OG image, title, description.
+          </div>
+          <span class="lib-badge">scraper.ts</span>
+          <span class="ext-badge">Firecrawl</span>
+          <span class="ext-badge">Langfuse</span>
+        </div>
+        <div class="arrow">&rarr;</div>
+        <div class="step">
+          <div class="step-num">Step 4</div>
+          <div class="step-title">Build Brand Profile</div>
+          <div class="step-detail">
+            brand-profiler.ts sends scrape data to Claude (claude-sonnet-4-6). Returns BrandProfile (category, tone, audience, value props) + AdCopy (headline, primaryText, description).
+          </div>
+          <span class="lib-badge">brand-profiler.ts</span>
+          <span class="ext-badge">Anthropic</span>
+          <span class="ext-badge">Langfuse</span>
+        </div>
+      </div>
+
+      <div class="pipeline" style="margin-top: 16px;">
+        <div class="step">
+          <div class="step-num">Step 5</div>
+          <div class="step-title">Competitor Research</div>
+          <div class="step-detail">
+            competitor-research.ts searches Meta Ad Library API for similar ads using top 3 value props as keywords. Non-fatal: errors are logged but don't block.
+          </div>
+          <span class="lib-badge">competitor-research.ts</span>
+          <span class="ext-badge">Meta Ad Library</span>
+        </div>
+        <div class="arrow">&rarr;</div>
+        <div class="step">
+          <div class="step-num">Step 6</div>
+          <div class="step-title">Store Brand Assets</div>
+          <div class="step-detail">
+            asset-storage.ts downloads external images (logo, OG, products) and re-uploads them to Supabase Storage bucket "ad-creatives". Filters out tracking pixels (&lt;1KB) and huge files (&gt;10MB).
+          </div>
+          <span class="lib-badge">asset-storage.ts</span>
+          <span class="ext-badge">Supabase Storage</span>
+        </div>
+        <div class="arrow">&rarr;</div>
+        <div class="step">
+          <div class="step-num">Step 7</div>
+          <div class="step-title">Save Profile to DB</div>
+          <div class="step-detail">
+            Updates campaigns row: brand_profile (JSON), brand_assets (JSON), ad_copy (JSON). Status stays "generating".
+          </div>
+          <span class="db-badge">campaigns UPDATE</span>
+        </div>
+        <div class="arrow">&rarr;</div>
+        <div class="step">
+          <div class="step-num">Step 8</div>
+          <div class="step-title">Generate Video Ads</div>
+          <div class="step-detail">
+            ad-generator.ts: (1) brand-profiler.ts generates 2 UGC scripts via Claude with different hooks/settings. (2) fal-client.ts generates 9:16 videos via Fal.ai (model from ad_config). (3) Auto-subtitles via Fal.ai. Each ad saved to DB immediately (sequential). Campaign status &rarr; "ready".
+          </div>
+          <span class="lib-badge">ad-generator.ts</span>
+          <span class="lib-badge">brand-profiler.ts</span>
+          <span class="lib-badge">fal-client.ts</span>
+          <span class="lib-badge">ad-config.ts</span>
+          <span class="ext-badge">Fal.ai</span>
+          <span class="ext-badge">Anthropic</span>
+          <span class="db-badge">ads INSERT</span>
+          <span class="db-badge">campaigns UPDATE</span>
+          <span class="db-badge">ad_config SELECT</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- FLOW 3: PAYMENT -->
+  <!-- ============================================ -->
+  <div class="flow-section">
+    <div class="flow-header">
+      <div class="icon" style="background:var(--green);">3</div>
+      <div>
+        <h2>PAYMENT FLOW</h2>
+        <div class="desc">Stripe Checkout for daily ad budget. Minimum $5/day. 10% platform commission applied at launch.</div>
+      </div>
+    </div>
+    <div class="flow-body">
+      <div class="pipeline">
+        <div class="step">
+          <div class="step-num">Step 1</div>
+          <div class="step-title">Set Budget</div>
+          <div class="step-detail">
+            BudgetForm component. User enters $10-$10,000/day. Calls POST /api/campaigns/[id]/checkout with { dailyBudgetCents }. Min 500 ($5).
+          </div>
+          <span class="api-badge">POST .../checkout</span>
+        </div>
+        <div class="arrow">&rarr;</div>
+        <div class="step">
+          <div class="step-num">Step 2</div>
+          <div class="step-title">Create Stripe Session</div>
+          <div class="step-detail">
+            checkout route.ts creates Stripe Checkout Session with campaign metadata. Updates campaign: daily_budget, stripe_payment_intent_id, status &rarr; "payment_pending". Returns session URL.
+          </div>
+          <span class="ext-badge">Stripe</span>
+          <span class="db-badge">campaigns UPDATE</span>
+        </div>
+        <div class="arrow">&rarr;</div>
+        <div class="step">
+          <div class="step-num">Step 3</div>
+          <div class="step-title">Stripe Checkout</div>
+          <div class="step-detail">
+            Browser redirects to Stripe hosted checkout page (window.location.href). Success URL: /onboard/success?campaign_id=X. Cancel URL: /onboard/cancel?campaign_id=X.
+          </div>
+          <span class="ext-badge">Stripe Hosted</span>
+        </div>
+        <div class="arrow">&rarr;</div>
+        <div class="step">
+          <div class="step-num">Step 4</div>
+          <div class="step-title">Webhook Confirmation</div>
+          <div class="step-detail">
+            POST /api/webhooks/stripe receives checkout.session.completed. Validates signature. Extracts campaign_id from metadata. Updates campaign status &rarr; "ready".
+          </div>
+          <span class="api-badge">POST /api/webhooks/stripe</span>
+          <span class="lib-badge">supabase/server (admin)</span>
+          <span class="db-badge">campaigns UPDATE</span>
+        </div>
+        <div class="arrow">&rarr;</div>
+        <div class="step">
+          <div class="step-num">Step 5</div>
+          <div class="step-title">Success Page</div>
+          <div class="step-detail">
+            /onboard/success shows "CONFIRMED" and links to campaign detail page with "GO LIVE NOW" button.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- FLOW 4: GO LIVE -->
+  <!-- ============================================ -->
+  <div class="flow-section">
+    <div class="flow-header">
+      <div class="icon" style="background:var(--purple);">4</div>
+      <div>
+        <h2>GO LIVE FLOW</h2>
+        <div class="desc">Creates Meta campaign, ad set, and ads via Meta Marketing API. 10% commission deducted, budget in INR.</div>
+      </div>
+    </div>
+    <div class="flow-body">
+      <div class="pipeline">
+        <div class="step">
+          <div class="step-num">Step 1</div>
+          <div class="step-title">Go Live Button</div>
+          <div class="step-detail">
+            GoLiveButton.tsx (client component) calls POST /api/campaigns/[id]/go-live. Only available when campaign.status === "ready".
+          </div>
+          <span class="api-badge">POST .../go-live</span>
+        </div>
+        <div class="arrow">&rarr;</div>
+        <div class="step">
+          <div class="step-num">Step 2</div>
+          <div class="step-title">Create Meta Campaign</div>
+          <div class="step-detail">
+            meta-ads.ts createCampaignWithBudget(). Objective: OUTCOME_TRAFFIC. Status: ACTIVE. Daily budget converted: USD cents * 0.9 (commission) * 85 (USD_TO_INR).
+          </div>
+          <span class="lib-badge">meta-ads.ts</span>
+          <span class="ext-badge">Meta Marketing API</span>
+        </div>
+        <div class="arrow">&rarr;</div>
+        <div class="step">
+          <div class="step-num">Step 3</div>
+          <div class="step-title">Create Ad Set</div>
+          <div class="step-detail">
+            createAdSet(): billing=IMPRESSIONS, optimization=LINK_CLICKS, bid=LOWEST_COST_WITHOUT_CAP. Advantage+ targeting (US only). No ad-set-level budget (campaign controls).
+          </div>
+          <span class="lib-badge">meta-ads.ts</span>
+          <span class="db-badge">campaigns UPDATE (meta IDs)</span>
+        </div>
+        <div class="arrow">&rarr;</div>
+        <div class="step">
+          <div class="step-num">Step 4</div>
+          <div class="step-title">Create Ads</div>
+          <div class="step-detail">
+            For each ad: (video) upload video &rarr; wait for thumbnail &rarr; createVideoAdCreative &rarr; createAd. (image) uploadAdImage &rarr; createImageAdCreative &rarr; createAd. Updates ad rows: meta_ad_id, meta_creative_id, status &rarr; "live". Campaign status &rarr; "live".
+          </div>
+          <span class="lib-badge">meta-ads.ts</span>
+          <span class="ext-badge">Meta Marketing API</span>
+          <span class="db-badge">ads UPDATE</span>
+          <span class="db-badge">campaigns UPDATE</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- FLOW 5: METRICS SYNC -->
+  <!-- ============================================ -->
+  <div class="flow-section">
+    <div class="flow-header">
+      <div class="icon" style="background:var(--cyan);">5</div>
+      <div>
+        <h2>METRICS SYNC (CRON)</h2>
+        <div class="desc">Hourly cron job fetches Meta Insights for all live campaigns. Configured in vercel.json.</div>
+      </div>
+    </div>
+    <div class="flow-body">
+      <div class="pipeline">
+        <div class="step">
+          <div class="step-num">Trigger</div>
+          <div class="step-title">Vercel Cron</div>
+          <div class="step-detail">
+            Schedule: "0 * * * *" (every hour). Configured in vercel.json. Auth via Bearer CRON_SECRET header.
+          </div>
+          <span class="ext-badge">Vercel Cron</span>
+        </div>
+        <div class="arrow">&rarr;</div>
+        <div class="step">
+          <div class="step-num">Step 1</div>
+          <div class="step-title">Fetch Live Campaigns</div>
+          <div class="step-detail">
+            GET /api/cron/sync-metrics queries campaigns where status="live" and meta_campaign_id is not null.
+          </div>
+          <span class="api-badge">GET /api/cron/sync-metrics</span>
+          <span class="lib-badge">supabase/server (admin)</span>
+          <span class="db-badge">campaigns SELECT</span>
+        </div>
+        <div class="arrow">&rarr;</div>
+        <div class="step">
+          <div class="step-num">Step 2</div>
+          <div class="step-title">Fetch Meta Insights</div>
+          <div class="step-detail">
+            For each campaign, calls Meta Graph API /{meta_campaign_id}/ads?fields=id,name,insights{impressions,clicks,ctr,cpc,spend}.
+          </div>
+          <span class="ext-badge">Meta Graph API v19.0</span>
+        </div>
+        <div class="arrow">&rarr;</div>
+        <div class="step">
+          <div class="step-num">Step 3</div>
+          <div class="step-title">Match &amp; Store</div>
+          <div class="step-detail">
+            Looks up ads table by meta_ad_id. Inserts new metrics row: impressions, clicks, ctr, cpc, spend, recorded_at.
+          </div>
+          <span class="db-badge">ads SELECT</span>
+          <span class="db-badge">metrics INSERT</span>
+        </div>
+        <div class="arrow">&rarr;</div>
+        <div class="step">
+          <div class="step-num">Display</div>
+          <div class="step-title">Campaign Detail</div>
+          <div class="step-detail">
+            Campaign detail page fetches latest metrics per ad (ordered by recorded_at DESC, first per ad_id). Shows: impressions, clicks, CTR, CPC, spend.
+          </div>
+          <span class="db-badge">metrics SELECT</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- FLOW 6: PAUSE/RESUME -->
+  <!-- ============================================ -->
+  <div class="flow-section">
+    <div class="flow-header">
+      <div class="icon" style="background:var(--red);">6</div>
+      <div>
+        <h2>PAUSE / RESUME</h2>
+        <div class="desc">Toggle Meta campaign status between ACTIVE and PAUSED.</div>
+      </div>
+    </div>
+    <div class="flow-body">
+      <div class="pipeline">
+        <div class="step">
+          <div class="step-num">Trigger</div>
+          <div class="step-title">PauseResumeButton</div>
+          <div class="step-detail">
+            Client component visible when status is "live" or "paused". Sends { action: "pause" | "resume" }.
+          </div>
+        </div>
+        <div class="arrow">&rarr;</div>
+        <div class="step">
+          <div class="step-num">API</div>
+          <div class="step-title">POST .../pause</div>
+          <div class="step-detail">
+            Calls meta-ads.ts pauseCampaign() or resumeCampaign(). Updates Meta campaign status via POST /{metaCampaignId} with status PAUSED or ACTIVE.
+          </div>
+          <span class="api-badge">POST .../pause</span>
+          <span class="lib-badge">meta-ads.ts</span>
+          <span class="ext-badge">Meta Marketing API</span>
+        </div>
+        <div class="arrow">&rarr;</div>
+        <div class="step">
+          <div class="step-num">DB</div>
+          <div class="step-title">Update Status</div>
+          <div class="step-detail">
+            Campaign status &rarr; "paused" or "live". Page refreshes via router.refresh().
+          </div>
+          <span class="db-badge">campaigns UPDATE</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- CAMPAIGN STATUS MACHINE -->
+  <!-- ============================================ -->
+  <div class="flow-section">
+    <div class="flow-header">
+      <div class="icon" style="background:var(--yellow);">S</div>
+      <div>
+        <h2>CAMPAIGN STATUS STATES</h2>
+        <div class="desc">All possible values for campaigns.status and what triggers each transition.</div>
+      </div>
+    </div>
+    <div class="flow-body">
+      <div class="status-grid">
+        <div class="status-chip">
+          <div class="status-name" style="color:var(--text-muted);">draft</div>
+          <div class="status-desc">Initial or failed. Set when processing fails at any step.</div>
+        </div>
+        <div class="status-chip">
+          <div class="status-name" style="color:var(--orange);">generating</div>
+          <div class="status-desc">Created by /create. Processing pipeline running (scrape, profile, video gen).</div>
+        </div>
+        <div class="status-chip">
+          <div class="status-name" style="color:var(--blue);">ready</div>
+          <div class="status-desc">All ads generated OR payment confirmed. Awaiting "Go Live".</div>
+        </div>
+        <div class="status-chip">
+          <div class="status-name" style="color:var(--yellow);">payment_pending</div>
+          <div class="status-desc">Stripe checkout session created but not yet confirmed.</div>
+        </div>
+        <div class="status-chip">
+          <div class="status-name" style="color:var(--purple);">preview_ready</div>
+          <div class="status-desc">Legacy/alternate state. Treated same as "ready" in dashboard UI.</div>
+        </div>
+        <div class="status-chip">
+          <div class="status-name" style="color:var(--green);">live</div>
+          <div class="status-desc">Meta campaign is ACTIVE. Ads running. Metrics syncing hourly.</div>
+        </div>
+        <div class="status-chip">
+          <div class="status-name" style="color:var(--red);">paused</div>
+          <div class="status-desc">Meta campaign is PAUSED. Can be resumed.</div>
+        </div>
+        <div class="status-chip">
+          <div class="status-name" style="color:var(--text-muted);">generating_full</div>
+          <div class="status-desc">Legacy state for full generation. Shown as "processing" in UI.</div>
+        </div>
+      </div>
+
+      <div style="margin-top:24px; padding:16px; background:var(--bg); border-radius:12px; border:1px solid var(--card-border);">
+        <p style="font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--text-light); line-height:1.8;">
+          <strong style="color:var(--text);">Status Transitions:</strong><br>
+          draft &rarr; generating &nbsp;&nbsp;(POST /create)<br>
+          generating &rarr; ready &nbsp;&nbsp;(ad-generator.ts completes)<br>
+          generating &rarr; draft &nbsp;&nbsp;(any processing step fails)<br>
+          ready &rarr; payment_pending &nbsp;&nbsp;(POST .../checkout)<br>
+          payment_pending &rarr; ready &nbsp;&nbsp;(Stripe webhook confirms)<br>
+          ready &rarr; live &nbsp;&nbsp;(POST .../go-live succeeds)<br>
+          live &rarr; paused &nbsp;&nbsp;(POST .../pause action=pause)<br>
+          paused &rarr; live &nbsp;&nbsp;(POST .../pause action=resume)
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- DATABASE TABLES -->
+  <!-- ============================================ -->
+  <div class="flow-section">
+    <div class="flow-header">
+      <div class="icon" style="background:var(--green);">DB</div>
+      <div>
+        <h2>DATABASE TABLES</h2>
+        <div class="desc">Supabase PostgreSQL. Types defined in src/types/database.ts.</div>
+      </div>
+    </div>
+    <div class="flow-body">
+      <div class="db-table-grid">
+        <div class="db-table-card">
+          <h4><span class="dot" style="background:var(--blue);"></span>profiles</h4>
+          <ul>
+            <li>id <span class="col-type">string (PK, matches auth.users.id)</span></li>
+            <li>email <span class="col-type">string</span></li>
+            <li>created_at <span class="col-type">timestamp</span></li>
+          </ul>
+        </div>
+        <div class="db-table-card">
+          <h4><span class="dot" style="background:var(--orange);"></span>campaigns</h4>
+          <ul>
+            <li>id <span class="col-type">string (PK)</span></li>
+            <li>user_id <span class="col-type">FK &rarr; profiles</span></li>
+            <li>url <span class="col-type">string</span></li>
+            <li>brand_profile <span class="col-type">JSON | null</span></li>
+            <li>brand_assets <span class="col-type">JSON | null</span></li>
+            <li>ad_copy <span class="col-type">JSON | null</span></li>
+            <li>status <span class="col-type">enum (8 values)</span></li>
+            <li>daily_budget <span class="col-type">number | null (cents)</span></li>
+            <li>meta_campaign_id <span class="col-type">string | null</span></li>
+            <li>meta_adset_id <span class="col-type">string | null</span></li>
+            <li>stripe_payment_intent_id <span class="col-type">string | null</span></li>
+            <li>created_at <span class="col-type">timestamp</span></li>
+          </ul>
+        </div>
+        <div class="db-table-card">
+          <h4><span class="dot" style="background:var(--purple);"></span>ads</h4>
+          <ul>
+            <li>id <span class="col-type">string (PK)</span></li>
+            <li>campaign_id <span class="col-type">FK &rarr; campaigns</span></li>
+            <li>type <span class="col-type">"image" | "video"</span></li>
+            <li>is_preview <span class="col-type">boolean</span></li>
+            <li>fal_request_id <span class="col-type">string | null</span></li>
+            <li>asset_url <span class="col-type">string | null</span></li>
+            <li>meta_ad_id <span class="col-type">string | null</span></li>
+            <li>meta_creative_id <span class="col-type">string | null</span></li>
+            <li>aspect_ratio <span class="col-type">string | null</span></li>
+            <li>placement <span class="col-type">string | null</span></li>
+            <li>status <span class="col-type">"generating"|"ready"|"live"|"failed"</span></li>
+            <li>prompt_used <span class="col-type">string | null</span></li>
+            <li>created_at <span class="col-type">timestamp</span></li>
+          </ul>
+        </div>
+        <div class="db-table-card">
+          <h4><span class="dot" style="background:var(--cyan);"></span>metrics</h4>
+          <ul>
+            <li>id <span class="col-type">string (PK)</span></li>
+            <li>ad_id <span class="col-type">FK &rarr; ads</span></li>
+            <li>campaign_id <span class="col-type">FK &rarr; campaigns</span></li>
+            <li>impressions <span class="col-type">number</span></li>
+            <li>clicks <span class="col-type">number</span></li>
+            <li>ctr <span class="col-type">number</span></li>
+            <li>cpc <span class="col-type">number</span></li>
+            <li>spend <span class="col-type">number</span></li>
+            <li>recorded_at <span class="col-type">timestamp</span></li>
+          </ul>
+        </div>
+        <div class="db-table-card">
+          <h4><span class="dot" style="background:var(--yellow);"></span>ad_library</h4>
+          <ul>
+            <li>id <span class="col-type">string (PK)</span></li>
+            <li>category <span class="col-type">string</span></li>
+            <li>prompt <span class="col-type">string</span></li>
+            <li>visual_url <span class="col-type">string | null</span></li>
+            <li>notes <span class="col-type">string | null</span></li>
+            <li>created_at <span class="col-type">timestamp</span></li>
+          </ul>
+        </div>
+        <div class="db-table-card">
+          <h4><span class="dot" style="background:var(--pink);"></span>ad_config</h4>
+          <ul>
+            <li>key <span class="col-type">string (PK)</span></li>
+            <li>value <span class="col-type">string</span></li>
+            <li>updated_at <span class="col-type">timestamp</span></li>
+          </ul>
+          <p style="font-family:'IBM Plex Mono',monospace; font-size:9px; color:var(--text-muted); margin-top:6px;">
+            Keys: video_model, video_duration, video_resolution, video_aspect_ratio, subtitle_enabled
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- EXTERNAL SERVICES -->
+  <!-- ============================================ -->
+  <div class="flow-section">
+    <div class="flow-header">
+      <div class="icon" style="background:var(--pink);">E</div>
+      <div>
+        <h2>EXTERNAL SERVICES</h2>
+        <div class="desc">All third-party APIs and services the application connects to.</div>
+      </div>
+    </div>
+    <div class="flow-body">
+      <div class="db-table-grid">
+        <div class="db-table-card">
+          <h4><span class="dot" style="background:var(--green);"></span>Supabase</h4>
+          <ul>
+            <li>Auth (email/password signup & login)</li>
+            <li>PostgreSQL (all tables)</li>
+            <li>Storage (ad-creatives, ad-library buckets)</li>
+            <li>3 client types: browser, server (cookie), admin (service role)</li>
+          </ul>
+        </div>
+        <div class="db-table-card">
+          <h4><span class="dot" style="background:var(--purple);"></span>Anthropic (Claude)</h4>
+          <ul>
+            <li>Model: claude-sonnet-4-6</li>
+            <li>Brand profile + ad copy generation</li>
+            <li>UGC video script writing (2 scripts)</li>
+            <li>Used in: brand-profiler.ts</li>
+          </ul>
+        </div>
+        <div class="db-table-card">
+          <h4><span class="dot" style="background:var(--orange);"></span>Firecrawl</h4>
+          <ul>
+            <li>Website scraping (markdown + JSON extraction)</li>
+            <li>Extracts brand assets, content, metadata</li>
+            <li>Used in: scraper.ts</li>
+          </ul>
+        </div>
+        <div class="db-table-card">
+          <h4><span class="dot" style="background:var(--cyan);"></span>Fal.ai</h4>
+          <ul>
+            <li>Image gen: fal-ai/nano-banana-2 (base + edit)</li>
+            <li>Video gen: configurable (default: fal-ai/sora-2/text-to-video)</li>
+            <li>Auto-subtitles: fal-ai/workflow-utilities/auto-subtitle</li>
+            <li>Used in: fal-client.ts</li>
+          </ul>
+        </div>
+        <div class="db-table-card">
+          <h4><span class="dot" style="background:var(--blue);"></span>Meta Marketing API</h4>
+          <ul>
+            <li>Graph API v19.0</li>
+            <li>Campaign, Ad Set, Creative, Ad CRUD</li>
+            <li>Video + image upload</li>
+            <li>Ad Library search (competitor research)</li>
+            <li>Insights fetch (metrics sync)</li>
+            <li>Pause / Resume</li>
+            <li>Used in: meta-ads.ts, competitor-research.ts, sync-metrics route</li>
+          </ul>
+        </div>
+        <div class="db-table-card">
+          <h4><span class="dot" style="background:var(--green);"></span>Stripe</h4>
+          <ul>
+            <li>Checkout Sessions (one-time payment)</li>
+            <li>Webhook: checkout.session.completed</li>
+            <li>Used in: checkout route, webhook route</li>
+          </ul>
+        </div>
+        <div class="db-table-card">
+          <h4><span class="dot" style="background:var(--yellow);"></span>Langfuse</h4>
+          <ul>
+            <li>LLM observability / tracing</li>
+            <li>Traces: scrape, brand-profile, scripts, video gen, subtitles, competitor research</li>
+            <li>Used in: most lib files</li>
+          </ul>
+        </div>
+        <div class="db-table-card">
+          <h4><span class="dot" style="background:var(--red);"></span>Vercel</h4>
+          <ul>
+            <li>Hosting (Next.js)</li>
+            <li>Cron jobs (hourly metrics sync)</li>
+            <li>maxDuration: 300s (process), 120s (go-live)</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

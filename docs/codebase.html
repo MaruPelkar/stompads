@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StompAds - Codebase Map</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #FFFCF8;
+    --orange: #FF4D00;
+    --text: #1a1a1a;
+    --text-light: #666;
+    --text-muted: #999;
+    --card-bg: #fff;
+    --card-border: rgba(0,0,0,0.08);
+    --green: #22c55e;
+    --blue: #3b82f6;
+    --purple: #8b5cf6;
+    --red: #ef4444;
+    --yellow: #f59e0b;
+    --pink: #ec4899;
+    --cyan: #06b6d4;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Bricolage Grotesque', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+  }
+  nav {
+    position: sticky; top: 0; z-index: 100;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 40px;
+    border-bottom: 1px solid var(--card-border);
+    background: rgba(255,252,248,0.92);
+    backdrop-filter: blur(16px);
+  }
+  .nav-brand {
+    font-size: 22px; font-weight: 800; letter-spacing: 2px;
+    color: var(--text); text-decoration: none;
+  }
+  .nav-brand span { color: var(--orange); }
+  .nav-links { display: flex; gap: 6px; }
+  .nav-links a {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px; letter-spacing: 1px; text-transform: uppercase;
+    padding: 8px 16px; border-radius: 8px;
+    text-decoration: none; color: var(--text);
+    border: 1px solid var(--card-border);
+    transition: all 0.2s;
+  }
+  .nav-links a:hover { border-color: var(--orange); color: var(--orange); }
+  .nav-links a.active { background: var(--orange); color: #fff; border-color: var(--orange); }
+
+  .container { max-width: 1200px; margin: 0 auto; padding: 40px 24px 80px; }
+  h1 { font-size: 48px; font-weight: 800; letter-spacing: -1px; margin-bottom: 8px; }
+  h1 span { color: var(--orange); }
+  .subtitle { font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: var(--text-light); letter-spacing: 0.5px; margin-bottom: 24px; }
+
+  .search-box {
+    position: sticky; top: 56px; z-index: 50;
+    background: rgba(255,252,248,0.95); backdrop-filter: blur(12px);
+    padding: 12px 0; margin-bottom: 24px;
+  }
+  .search-input {
+    width: 100%; padding: 12px 20px;
+    border: 1px solid var(--card-border); border-radius: 10px;
+    font-family: 'IBM Plex Mono', monospace; font-size: 13px;
+    background: var(--card-bg); color: var(--text);
+    outline: none; transition: border-color 0.2s;
+  }
+  .search-input:focus { border-color: var(--orange); }
+  .search-input::placeholder { color: var(--text-muted); }
+
+  .section {
+    margin-bottom: 40px;
+    border: 1px solid var(--card-border);
+    border-radius: 16px;
+    background: var(--card-bg);
+    overflow: hidden;
+  }
+  .section-header {
+    padding: 18px 24px;
+    border-bottom: 1px solid var(--card-border);
+    display: flex; align-items: center; gap: 10px;
+  }
+  .section-header .icon {
+    width: 28px; height: 28px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 800; color: #fff; flex-shrink: 0;
+  }
+  .section-header h2 { font-size: 16px; font-weight: 700; letter-spacing: 1px; }
+  .section-header .count {
+    font-family: 'IBM Plex Mono', monospace; font-size: 10px;
+    color: var(--text-muted); margin-left: auto;
+  }
+
+  .file-row {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    gap: 16px;
+    padding: 12px 24px;
+    border-bottom: 1px solid rgba(0,0,0,0.03);
+    align-items: start;
+    transition: background 0.15s;
+  }
+  .file-row:hover { background: rgba(255,77,0,0.02); }
+  .file-row:last-child { border-bottom: none; }
+  .file-row.hidden { display: none; }
+
+  .file-path {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px; font-weight: 600; color: var(--text);
+    word-break: break-all;
+  }
+  .file-info { }
+  .file-desc {
+    font-size: 13px; color: var(--text-light); margin-bottom: 6px;
+  }
+  .file-tags { display: flex; flex-wrap: wrap; gap: 4px; }
+  .tag {
+    display: inline-block; padding: 2px 7px; border-radius: 4px;
+    font-family: 'IBM Plex Mono', monospace; font-size: 9px;
+    font-weight: 600;
+  }
+  .tag-dep { background: #fae8ff; color: #7c3aed; }
+  .tag-ext { background: #fef3c7; color: #92400e; }
+  .tag-db { background: #dcfce7; color: #166534; }
+  .tag-uses { background: #dbeafe; color: #1e40af; }
+
+  .tree-note {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px; color: var(--text-muted);
+    padding: 12px 24px; border-bottom: 1px solid rgba(0,0,0,0.03);
+  }
+
+  @media (max-width: 768px) {
+    nav { padding: 12px 16px; }
+    .container { padding: 24px 16px 60px; }
+    h1 { font-size: 32px; }
+    .file-row { grid-template-columns: 1fr; gap: 4px; }
+  }
+</style>
+</head>
+<body>
+<nav>
+  <a href="data-flow.html" class="nav-brand">STOMP<span>ADS</span> <span style="font-size:12px;font-weight:400;letter-spacing:0;color:var(--text-muted)">docs</span></a>
+  <div class="nav-links">
+    <a href="data-flow.html">Data Flow</a>
+    <a href="codebase.html" class="active">Codebase</a>
+    <a href="ui-map.html">UI Map</a>
+  </div>
+</nav>
+
+<div class="container">
+  <h1>CODE<span>BASE</span></h1>
+  <p class="subtitle">Every file in the src/ directory, grouped by role. Shows descriptions, dependencies, and external service connections.</p>
+
+  <div class="search-box">
+    <input type="text" class="search-input" id="searchInput" placeholder="Search files, dependencies, or services..." oninput="filterFiles()">
+  </div>
+
+  <!-- ============================================ -->
+  <!-- PAGES -->
+  <!-- ============================================ -->
+  <div class="section" data-section="pages">
+    <div class="section-header">
+      <div class="icon" style="background:var(--orange);">P</div>
+      <h2>PAGES</h2>
+      <span class="count">10 files</span>
+    </div>
+
+    <div class="file-row" data-search="page.tsx landing home hero url input typing animation">
+      <div class="file-path">src/app/page.tsx</div>
+      <div class="file-info">
+        <div class="file-desc">Landing page. Hero section with animated URL input that cycles through sample sites. "LAUNCH MY ADS" button. Checks auth state to route to /onboard (logged in) or /signup (not logged in). Floating ad card decorations.</div>
+        <div class="file-tags">
+          <span class="tag tag-dep">supabase/client</span>
+          <span class="tag tag-ext">Supabase Auth</span>
+        </div>
+      </div>
+    </div>
+    <div class="file-row" data-search="login auth email password signInWithPassword">
+      <div class="file-path">src/app/(auth)/login/page.tsx</div>
+      <div class="file-info">
+        <div class="file-desc">Login page. Email + password form. Calls supabase.auth.signInWithPassword(). Redirects to /dashboard on success. Link to /signup.</div>
+        <div class="file-tags">
+          <span class="tag tag-dep">supabase/client</span>
+          <span class="tag tag-ext">Supabase Auth</span>
+        </div>
+      </div>
+    </div>
+    <div class="file-row" data-search="signup register create account signUp redirect">
+      <div class="file-path">src/app/(auth)/signup/page.tsx</div>
+      <div class="file-info">
+        <div class="file-desc">Signup page. Email + password form (min 6 chars). Calls supabase.auth.signUp(). Honors ?redirect query param (set by landing page when URL was entered). Falls back to /onboard.</div>
+        <div class="file-tags">
+          <span class="tag tag-dep">supabase/client</span>
+          <span class="tag tag-ext">Supabase Auth</span>
+        </div>
+      </div>
+    </div>
+    <div class="file-row" data-search="onboard wizard url generate campaign create process poll status progress steps">
+      <div class="file-path">src/app/(app)/onboard/page.tsx</div>
+      <div class="file-info">
+        <div class="file-desc">Main onboarding wizard. 4 steps: url &rarr; generating &rarr; preview &rarr; checkout. Auto-starts if ?url param present. POSTs to /api/campaigns/create, polls /status every 3s. Shows 6-step progress indicator. On completion, shows AdPreview + BudgetForm. Budget submit calls /checkout and redirects to Stripe.</div>
+        <div class="file-tags">
+          <span class="tag tag-uses">UrlForm</span>
+          <span class="tag tag-uses">AdPreview</span>
+          <span class="tag tag-uses">BudgetForm</span>
+          <span class="tag tag-dep">POST /api/campaigns/create</span>
+          <span class="tag tag-dep">GET /api/campaigns/[id]/status</span>
+          <span class="tag tag-dep">POST /api/campaigns/[id]/checkout</span>
+        </div>
+      </div>
+    </div>
+    <div class="file-row" data-search="dashboard list campaigns status badge resume">
+      <div class="file-path">src/app/(app)/dashboard/page.tsx</div>
+      <div class="file-info">
+        <div class="file-desc">Dashboard page (server component). Lists all user campaigns ordered by created_at DESC. Shows URL, daily budget, status badge. Clickable cards link to campaign detail or resume flow based on status. Empty state with "START NOW" link.</div>
+        <div class="file-tags">
+          <span class="tag tag-dep">supabase/server</span>
+          <span class="tag tag-db">campaigns SELECT</span>
+        </div>
+      </div>
+    </div>
+    <div class="file-row" data-search="campaign detail campaignId ads metrics go-live pause resume KPI spend clicks impressions CTR CPC">
+      <div class="file-path">src/app/(app)/dashboard/[campaignId]/page.tsx</div>
+      <div class="file-info">
+        <div class="file-desc">Campaign detail page (server component). Shows brand name, URL, status badge, daily budget, aggregate metrics (spend, clicks, impressions). Conditional sections: generating (spinner + retry), draft (failed + retry), payment_pending (ResumeCheckout), ready (GoLiveButton), live/paused (PauseResumeButton). Grid of ad cards with per-ad metrics (impressions, clicks, CTR, CPC, spend).</div>
+        <div class="file-tags">
+          <span class="tag tag-uses">GoLiveButton</span>
+          <span class="tag tag-uses">PauseResumeButton</span>
+          <span class="tag tag-uses">ResumeCheckout</span>
+          <span class="tag tag-dep">supabase/server</span>
+          <span class="tag tag-db">campaigns SELECT</span>
+          <span class="tag tag-db">ads SELECT</span>
+          <span class="tag tag-db">metrics SELECT</span>
+        </div>
+      </div>
+    </div>
+    <div class="file-row" data-search="success payment confirmed go live now">
+      <div class="file-path">src/app/(app)/onboard/success/page.tsx</div>
+      <div class="file-info">
+        <div class="file-desc">Payment success page. Shows "CONFIRMED" heading. Links to campaign detail with "GO LIVE NOW" button (if campaign_id in params) or dashboard.</div>
+        <div class="file-tags"></div>
+      </div>
+    </div>
+    <div class="file-row" data-search="cancel payment cancelled no charge">
+      <div class="file-path">src/app/(app)/onboard/cancel/page.tsx</div>
+      <div class="file-info">
+        <div class="file-desc">Payment cancel page. Shows "CANCELLED" heading. "No charge" message. Links back to onboard (with campaign_id if available).</div>
+        <div class="file-tags"></div>
+      </div>
+    </div>
+    <div class="file-row" data-search="admin library template upload category prompt visual reference">
+      <div class="file-path">src/app/(app)/admin/library/page.tsx</div>
+      <div class="file-info">
+        <div class="file-desc">Admin ad template library page (client component). Form to add templates: category, prompt, notes, optional visual file. Lists existing templates with category, date, prompt snippet, notes. Fetches GET /api/admin/library, submits POST with FormData.</div>
+        <div class="file-tags">
+          <span class="tag tag-dep">GET /api/admin/library</span>
+          <span class="tag tag-dep">POST /api/admin/library</span>
+          <span class="tag tag-db">ad_library</span>
+        </div>
+      </div>
+    </div>
+    <div class="tree-note">Layouts (not individually searchable)</div>
+    <div class="file-row" data-search="root layout metadata geist font favicon">
+      <div class="file-path">src/app/layout.tsx</div>
+      <div class="file-info">
+        <div class="file-desc">Root layout. Loads Geist Sans + Geist Mono fonts. Sets metadata: "StompAds - Run Ads. Not Headaches." Favicon: /favicon.png.</div>
+        <div class="file-tags"></div>
+      </div>
+    </div>
+    <div class="file-row" data-search="auth layout centered card logo branding">
+      <div class="file-path">src/app/(auth)/layout.tsx</div>
+      <div class="file-info">
+        <div class="file-desc">Auth layout. Centered card with STOMPADS logo and "Ads on autopilot" tagline. Used by login and signup pages.</div>
+        <div class="file-tags"></div>
+      </div>
+    </div>
+    <div class="file-row" data-search="app layout nav dashboard new campaign logout">
+      <div class="file-path">src/app/(app)/layout.tsx</div>
+      <div class="file-info">
+        <div class="file-desc">App layout (server component). Checks auth, redirects to /login if not authenticated. Top nav with STOMPADS logo, "Dashboard" link, "+ New" button. Content area max-width 960px.</div>
+        <div class="file-tags">
+          <span class="tag tag-dep">supabase/server</span>
+          <span class="tag tag-ext">Supabase Auth</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- API ROUTES -->
+  <!-- ============================================ -->
+  <div class="section" data-section="api">
+    <div class="section-header">
+      <div class="icon" style="background:var(--blue);">A</div>
+      <h2>API ROUTES</h2>
+      <span class="count">8 routes</span>
+    </div>
+
+    <div class="file-row" data-search="campaigns create POST insert generating trigger process">
+      <div class="file-path">src/app/api/campaigns/create/route.ts</div>
+      <div class="file-info">
+        <div class="file-desc">POST /api/campaigns/create. Authenticates user, validates URL, inserts campaign row (status=generating), triggers server-to-server call to /process (non-blocking, forwards cookies), returns { campaignId }.</div>
+        <div class="file-tags">
+          <span class="tag tag-dep">supabase/server</span>
+          <span class="tag tag-db">campaigns INSERT</span>
+        </div>
+      </div>
+    </div>
+    <div class="file-row" data-search="process scrape profile competitor assets generate ads pipeline heavy maxDuration 300">
+      <div class="file-path">src/app/api/campaigns/[campaignId]/process/route.ts</div>
+      <div class="file-info">
+        <div class="file-desc">POST /api/campaigns/[id]/process. Heavy pipeline (maxDuration=300s): (1) scrapeUrl via Firecrawl, (2) buildBrandProfile via Claude, (3) findCompetitorAds via Meta Ad Library (non-fatal), (4) storeBrandAssets to Supabase Storage, (5) save profile/assets/copy to campaigns, (6) generateCampaignAds (2 UGC videos). On failure at any step, sets status=draft. Langfuse tracing throughout.</div>
+        <div class="file-tags">
+          <span class="tag tag-dep">scraper.ts</span>
+          <span class="tag tag-dep">brand-profiler.ts</span>
+          <span class="tag tag-dep">competitor-research.ts</span>
+          <span class="tag tag-dep">ad-generator.ts</span>
+          <span class="tag tag-dep">asset-storage.ts</span>
+          <span class="tag tag-dep">langfuse.ts</span>
+          <span class="tag tag-dep">supabase/server (admin)</span>
+          <span class="tag tag-ext">Firecrawl</span>
+          <span class="tag tag-ext">Anthropic</span>
+          <span class="tag tag-ext">Meta Ad Library</span>
+          <span class="tag tag-ext">Fal.ai</span>
+          <span class="tag tag-ext">Supabase Storage</span>
+          <span class="tag tag-ext">Langfuse</span>
+          <span class="tag tag-db">campaigns SELECT/UPDATE</span>
+          <span class="tag tag-db">ads INSERT</span>
+        </div>
+      </div>
+    </div>
+    <div class="file-row" data-search="status poll GET brandProfile adCopy ads generating ready">
+      <div class="file-path">src/app/api/campaigns/[campaignId]/status/route.ts</div>
+      <div class="file-info">
+        <div class="file-desc">GET /api/campaigns/[id]/status. Returns campaign status, brandProfile, adCopy, brandAssets, and all ads. Used for polling during generation (every 3s from onboard page).</div>
+        <div class="file-tags">
+          <span class="tag tag-dep">supabase/server</span>
+          <span class="tag tag-db">campaigns SELECT</span>
+          <span class="tag tag-db">ads SELECT</span>
+        </div>
+      </div>
+    </div>
+    <div class="file-row" data-search="ads GET preview filter list">
+      <div class="file-path">src/app/api/campaigns/[campaignId]/ads/route.ts</div>
+      <div class="file-info">
+        <div class="file-desc">GET /api/campaigns/[id]/ads. Returns ads for campaign. Optional ?preview=true filter for preview-only ads.</div>
+        <div class="file-tags">
+          <span class="tag tag-dep">supabase/server</span>
+          <span class="tag tag-db">ads SELECT</span>
+        </div>
+      </div>
+    </div>
+    <div class="file-row" data-search="checkout stripe session payment budget minimum 500 cents redirect">
+      <div class="file-path">src/app/api/campaigns/[campaignId]/checkout/route.ts</div>
+      <div class="file-info">
+        <div class="file-desc">POST /api/campaigns/[id]/checkout. Validates budget (min $5 / 500 cents). Creates Stripe Checkout Session (one-time payment, campaign metadata). Updates campaign: daily_budget, stripe_payment_intent_id, status=payment_pending. Returns { checkoutUrl }.</div>
+        <div class="file-tags">
+          <span class="tag tag-dep">supabase/server (service)</span>
+          <span class="tag tag-ext">Stripe</span>
+          <span class="tag tag-db">campaigns SELECT/UPDATE</span>
+        </div>
+      </div>
+    </div>
+    <div class="file-row" data-search="go-live meta campaign adset creative ad upload video image launch maxDuration 120">
+      <div class="file-path">src/app/api/campaigns/[campaignId]/go-live/route.ts</div>
+      <div class="file-info">
+        <div class="file-desc">POST /api/campaigns/[id]/go-live. Requires status=ready. Creates Meta campaign (OUTCOME_TRAFFIC, daily budget with 10% commission, converted to INR), ad set (Advantage+ US targeting), and ads (video or image creatives). Updates campaign + ad rows with Meta IDs, sets status=live. maxDuration=120s.</div>
+        <div class="file-tags">
+          <span class="tag tag-dep">meta-ads.ts</span>
+          <span class="tag tag-dep">supabase/server (service)</span>
+          <span class="tag tag-ext">Meta Marketing API</span>
+          <span class="tag tag-db">campaigns SELECT/UPDATE</span>
+          <span class="tag tag-db">ads SELECT/UPDATE</span>
+        </div>
+      </div>
+    </div>
+    <div class="file-row" data-search="pause resume toggle PAUSED ACTIVE meta campaign">
+      <div class="file-path">src/app/api/campaigns/[campaignId]/pause/route.ts</div>
+      <div class="file-info">
+        <div class="file-desc">POST /api/campaigns/[id]/pause. Accepts { action: "pause" | "resume" }. Calls meta-ads.ts pauseCampaign() or resumeCampaign(). Updates campaign status to "paused" or "live".</div>
+        <div class="file-tags">
+          <span class="tag tag-dep">meta-ads.ts</span>
+          <span class="tag tag-dep">supabase/server (service)</span>
+          <span class="tag tag-ext">Meta Marketing API</span>
+          <span class="tag tag-db">campaigns SELECT/UPDATE</span>
+        </div>
+      </div>
+    </div>
+    <div class="file-row" data-search="webhook stripe checkout session completed signature verify ready">
+      <div class="file-path">src/app/api/webhooks/stripe/route.ts</div>
+      <div class="file-info">
+        <div class="file-desc">POST /api/webhooks/stripe. Stripe webhook handler. Verifies signature with STRIPE_WEBHOOK_SECRET. Handles checkout.session.completed: extracts campaign_id from metadata, updates campaign status to "ready" using admin client.</div>
+        <div class="file-tags">
+          <span class="tag tag-dep">supabase/server (admin)</span>
+          <span class="tag tag-ext">Stripe Webhooks</span>
+          <span class="tag tag-db">campaigns UPDATE</span>
+        </div>
+      </div>
+    </div>
+    <div class="file-row" data-search="cron sync metrics hourly insights impressions clicks CTR CPC spend">
+      <div class="file-path">src/app/api/cron/sync-metrics/route.ts</div>
+      <div class="file-info">
+        <div class="file-desc">GET /api/cron/sync-metrics. Hourly cron (vercel.json). Auth via Bearer CRON_SECRET. Fetches all live campaigns with meta_campaign_id. For each, calls Meta Graph API for ad insights (impressions, clicks, ctr, cpc, spend). Matches ads by meta_ad_id, inserts metrics rows.</div>
+        <div class="file-tags">
+          <span class="tag tag-dep">supabase/server (admin)</span>
+          <span class="tag tag-ext">Meta Graph API v19.0</span>
+          <span class="tag tag-db">campaigns SELECT</span>
+          <span class="tag tag-db">ads SELECT</span>
+          <span class="tag tag-db">metrics INSERT</span>
+        </div>
+      </div>
+    </div>
+    <div class="file-row" data-search="admin library GET POST template category prompt visual upload formdata">
+      <div class="file-path">src/app/api/admin/library/route.ts</div>
+      <div class="file-info">
+        <div class="file-desc">GET + POST /api/admin/library. Admin-only (checks ADMIN_EMAIL env var). GET: lists all ad_library templates. POST: accepts FormData (category, prompt, notes, optional visual file), uploads visual to Supabase Storage "ad-library" bucket, inserts row.</div>
+        <div class="file-tags">
+          <span class="tag tag-dep">supabase/server (service)</span>
+          <span class="tag tag-ext">Supabase Storage</span>
+          <span class="tag tag-db">ad_library SELECT/INSERT</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- LIB FILES -->
+  <!-- ============================================ -->
+  <div class="section" data-section="lib">
+    <div class="section-header">
+      <div class="icon" style="background:var(--purple);">L</div>
+      <h2>LIB (UTILITIES)</h2>
+      <span class="count">10 files</span>
+    </div>
+
+    <div class="file-row" data-search="scraper firecrawl scrapeUrl markdown json extraction logo favicon product images brand colors og">
+      <div class="file-path">src/lib/scraper.ts</div>
+      <div class="file-info">
+        <div class="file-desc">Website scraper using Firecrawl. Extracts markdown content + structured JSON (logo, favicon, product images, brand colors, OG image, title, description, target audience, key features). Returns ScrapeResult with BrandAssets. Langfuse-traced.</div>
+        <div class="file-tags">
+          <span class="tag tag-dep">langfuse.ts</span>
+          <span class="tag tag-ext">Firecrawl</span>
+          <span class="tag tag-ext">Langfuse</span>
+        </div>
+      </div>
+    </div>
+    <div class="file-row" data-search="brand-profiler anthropic claude buildBrandProfile generateVideoScripts UGC copywriter hook script">
+      <div class="file-path">src/lib/brand-profiler.ts</div>
+      <div class="file-info">
+        <div class="file-desc">Two functions: (1) buildBrandProfile() sends scrape data to Claude claude-sonnet-4-6, returns BrandProfile (category, tone, audience, value props, product name) + AdCopy (headline &lt;25 chars, primaryText &lt;100 chars, description &lt;25 chars). (2) generateVideoScripts() generates 2 UGC ad scripts with different hooks (curiosity/FOMO) and random settings (city, cafe, park, etc), 40-50 words each. Expert UGC copywriter system prompt.</div>
+        <div class="file-tags">
+          <span class="tag tag-dep">langfuse.ts</span>
+          <span class="tag tag-ext">Anthropic (claude-sonnet-4-6)</span>
+          <span class="tag tag-ext">Langfuse</span>
+        </div>
+      </div>
+    </div>
+    <div class="file-row" data-search="competitor-research meta ad library search findCompetitorAds keywords">
+      <div class="file-path">src/lib/competitor-research.ts</div>
+      <div class="file-info">
+        <div class="file-desc">Searches Meta Ad Library API for competitor ads. Uses top 3 value props as search terms, US-targeted, limit 5 results. Returns array of CompetitorAd (id, page_name, ad_creative_body, ad_snapshot_url). Non-fatal: returns empty array on error.</div>
+        <div class="file-tags">
+          <span class="tag tag-dep">langfuse.ts</span>
+          <span class="tag tag-ext">Meta Ad Library API</span>
+          <span class="tag tag-ext">Langfuse</span>
+        </div>
+      </div>
+    </div>
+    <div class="file-row" data-search="fal-client fal.ai image video subtitle generateImageAd generateVideoAd nano-banana sora addSubtitles">
+      <div class="file-path">src/lib/fal-client.ts</div>
+      <div class="file-info">
+        <div class="file-desc">Fal.ai client with 3 capabilities: (1) generateImageAd() using nano-banana-2 (base or edit model with reference images, fallback to base). (2) generateVideoAd() pipeline: generates raw video (model from ad_config, default sora-2), then optionally adds subtitles. (3) addSubtitles() using auto-subtitle model (Montserrat bold, orange highlights, 3 words/subtitle). Aspect ratios: 1:1, 9:16, 16:9, 4:5.</div>
+        <div class="file-tags">
+          <span class="tag tag-dep">langfuse.ts</span>
+          <span class="tag tag-dep">ad-config.ts</span>
+          <span class="tag tag-ext">Fal.ai</span>
+          <span class="tag tag-ext">Langfuse</span>
+        </div>
+      </div>
+    </div>
+    <div class="file-row" data-search="ad-generator generateCampaignAds video scripts prompts sequential UGC iPhone setting">
+      <div class="file-path">src/lib/ad-generator.ts</div>
+      <div class="file-info">
+        <div class="file-desc">Orchestrates ad generation for a campaign. Generates 2 UGC video scripts (via brand-profiler.ts), builds video prompts (12s UGC-style, 9:16, iPhone look), generates videos sequentially via fal-client.ts (each saved to DB immediately for partial progress visibility). Updates campaign status to "ready" when done. Throws if all generations fail.</div>
+        <div class="file-tags">
+          <span class="tag tag-dep">fal-client.ts</span>
+          <span class="tag tag-dep">brand-profiler.ts</span>
+          <span class="tag tag-dep">supabase/server (admin)</span>
+          <span class="tag tag-dep">langfuse.ts</span>
+          <span class="tag tag-db">ads INSERT</span>
+          <span class="tag tag-db">campaigns UPDATE</span>
+        </div>
+      </div>
+    </div>
+    <div class="file-row" data-search="meta-ads marketing API campaign adset creative ad upload video image pause resume traffic INR">
+      <div class="file-path">src/lib/meta-ads.ts</div>
+      <div class="file-info">
+        <div class="file-desc">Meta Marketing API wrapper (Graph API v19.0). Functions: createCampaignWithBudget() (OUTCOME_TRAFFIC), createAdSet() (Advantage+ US, LOWEST_COST_WITHOUT_CAP), uploadAdImage() (base64), createImageAdCreative(), createVideoAdCreative() (upload video, poll for thumbnail, fallback to brand image), createAd(), pauseCampaign(), resumeCampaign(). All use metaFetch() helper with error parsing.</div>
+        <div class="file-tags">
+          <span class="tag tag-ext">Meta Marketing API v19.0</span>
+        </div>
+      </div>
+    </div>
+    <div class="file-row" data-search="asset-storage storeBrandAssets download upload supabase storage ad-creatives bucket">
+      <div class="file-path">src/lib/asset-storage.ts</div>
+      <div class="file-info">
+        <div class="file-desc">Downloads external brand images (logo, favicon, OG, product images) and re-uploads to Supabase Storage "ad-creatives" bucket. Filters: skips files &lt;1KB (tracking pixels) or &gt;10MB. Parallel uploads. Returns new BrandAssets with Supabase public URLs.</div>
+        <div class="file-tags">
+          <span class="tag tag-dep">supabase/server (admin)</span>
+          <span class="tag tag-ext">Supabase Storage</span>
+        </div>
+      </div>
+    </div>
+    <div class="file-row" data-search="ad-config getAdConfig videoModel videoDuration videoResolution subtitleEnabled defaults cache TTL">
+      <div class="file-path">src/lib/ad-config.ts</div>
+      <div class="file-info">
+        <div class="file-desc">Fetches ad generation config from ad_config table with 1-minute cache. Keys: video_model (default: fal-ai/sora-2/text-to-video), video_duration (4), video_resolution (720p), video_aspect_ratio (9:16), subtitle_enabled (true). Falls back to hardcoded defaults on error.</div>
+        <div class="file-tags">
+          <span class="tag tag-dep">supabase/server (admin)</span>
+          <span class="tag tag-db">ad_config SELECT</span>
+        </div>
+      </div>
+    </div>
+    <div class="file-row" data-search="langfuse observability tracing LLM monitoring">
+      <div class="file-path">src/lib/langfuse.ts</div>
+      <div class="file-info">
+        <div class="file-desc">Initializes singleton Langfuse client for LLM observability. Configured via LANGFUSE_SECRET_KEY, LANGFUSE_PUBLIC_KEY, LANGFUSE_BASEURL (default: us.cloud.langfuse.com). Exported as `langfuse`.</div>
+        <div class="file-tags">
+          <span class="tag tag-ext">Langfuse</span>
+        </div>
+      </div>
+    </div>
+    <div class="file-row" data-search="supabase server client browser admin service role cookie SSR createClient createAdminClient createServiceClient">
+      <div class="file-path">src/lib/supabase/server.ts</div>
+      <div class="file-info">
+        <div class="file-desc">Three Supabase client factories: (1) createClient() - cookie-based server client with anon key (for authenticated routes), (2) createServiceClient() - cookie-based with service role key (for admin operations in request context), (3) createAdminClient() - no cookies, direct service role (for webhooks, cron, background jobs). All typed with Database.</div>
+        <div class="file-tags">
+          <span class="tag tag-ext">Supabase</span>
+        </div>
+      </div>
+    </div>
+    <div class="file-row" data-search="supabase client browser createBrowserClient anon key">
+      <div class="file-path">src/lib/supabase/client.ts</div>
+      <div class="file-info">
+        <div class="file-desc">Browser-side Supabase client using createBrowserClient with anon key. Used by client components (landing page, login, signup) for auth operations.</div>
+        <div class="file-tags">
+          <span class="tag tag-ext">Supabase</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- COMPONENTS -->
+  <!-- ============================================ -->
+  <div class="section" data-section="components">
+    <div class="section-header">
+      <div class="icon" style="background:var(--green);">C</div>
+      <h2>COMPONENTS</h2>
+      <span class="count">8 files</span>
+    </div>
+
+    <div class="file-row" data-search="UrlForm input submit normalize url onboard">
+      <div class="file-path">src/components/onboard/UrlForm.tsx</div>
+      <div class="file-info">
+        <div class="file-desc">Client component. URL input form with "GO" button. Auto-prepends https:// if missing. Props: onSubmit(url), loading. Used in onboard page (step 1).</div>
+        <div class="file-tags"></div>
+      </div>
+    </div>
+    <div class="file-row" data-search="AdPreview video ads grid stories reels preview">
+      <div class="file-path">src/components/onboard/AdPreview.tsx</div>
+      <div class="file-info">
+        <div class="file-desc">Displays generated video ads in a horizontal row. Shows video count, "Instagram Stories &amp; Reels" label. Each ad: 140x248px video player with controls. Props: ads (Ad[]). Used in onboard page (step 3).</div>
+        <div class="file-tags">
+          <span class="tag tag-dep">types/database (Ad)</span>
+        </div>
+      </div>
+    </div>
+    <div class="file-row" data-search="BudgetForm daily budget dollar input number min max 10 10000 confirm launch 10% cut">
+      <div class="file-path">src/components/onboard/BudgetForm.tsx</div>
+      <div class="file-info">
+        <div class="file-desc">Client component. Daily budget input with $ prefix, large display font. Validates $10-$10,000. Shows "10% cut" disclosure. "CONFIRM &amp; LAUNCH" button. Converts to cents (val*100). Props: onSubmit(dailyBudgetCents), loading. Used in onboard and ResumeCheckout.</div>
+        <div class="file-tags"></div>
+      </div>
+    </div>
+    <div class="file-row" data-search="BrandProfileCard product category audience value props ad copy headline primaryText description">
+      <div class="file-path">src/components/onboard/BrandProfileCard.tsx</div>
+      <div class="file-info">
+        <div class="file-desc">Displays brand profile: product name, category, target audience, key value props (bulleted list). Optional ad copy section: headline, primary text, description. Props: profile (BrandProfile), adCopy? (AdCopy). Currently not used in main flow (available for future use).</div>
+        <div class="file-tags">
+          <span class="tag tag-dep">types/database (BrandProfile, AdCopy)</span>
+        </div>
+      </div>
+    </div>
+    <div class="file-row" data-search="AdCard image video metrics CTR CPC clicks spend badge status">
+      <div class="file-path">src/components/dashboard/AdCard.tsx</div>
+      <div class="file-info">
+        <div class="file-desc">Ad card with media preview (image or autoplay video), type/aspect label, status badge, and optional metrics grid (CTR, CPC, Clicks, Spend via MetricsBadge). Props: ad (Ad), metrics? (Metrics).</div>
+        <div class="file-tags">
+          <span class="tag tag-uses">MetricsBadge</span>
+          <span class="tag tag-dep">types/database (Ad, Metrics)</span>
+        </div>
+      </div>
+    </div>
+    <div class="file-row" data-search="MetricsBadge label value sub display number font">
+      <div class="file-path">src/components/dashboard/MetricsBadge.tsx</div>
+      <div class="file-info">
+        <div class="file-desc">Simple metric display card. Shows label (mono uppercase), large value (display font 26px), optional subtitle. Props: label, value, sub?.</div>
+        <div class="file-tags"></div>
+      </div>
+    </div>
+    <div class="file-row" data-search="GoLiveButton launch live POST go-live router refresh">
+      <div class="file-path">src/app/(app)/dashboard/[campaignId]/GoLiveButton.tsx</div>
+      <div class="file-info">
+        <div class="file-desc">Client component. "GO LIVE" button (22px, 3px letter spacing). Calls POST /api/campaigns/[id]/go-live. Shows loading state "LAUNCHING..." and error box. On success, calls router.refresh(). Props: campaignId.</div>
+        <div class="file-tags">
+          <span class="tag tag-dep">POST .../go-live</span>
+        </div>
+      </div>
+    </div>
+    <div class="file-row" data-search="PauseResumeButton pause resume toggle live paused action">
+      <div class="file-path">src/app/(app)/dashboard/[campaignId]/PauseResumeButton.tsx</div>
+      <div class="file-info">
+        <div class="file-desc">Client component. Visible only when status is "live" or "paused". Shows "PAUSE ADS" (ghost red) when live, "RESUME ADS" (primary) when paused. Calls POST /api/campaigns/[id]/pause with { action }. Props: campaignId, currentStatus.</div>
+        <div class="file-tags">
+          <span class="tag tag-dep">POST .../pause</span>
+        </div>
+      </div>
+    </div>
+    <div class="file-row" data-search="ResumeCheckout budget form payment pending checkout redirect stripe">
+      <div class="file-path">src/app/(app)/dashboard/[campaignId]/ResumeCheckout.tsx</div>
+      <div class="file-info">
+        <div class="file-desc">Client component. Shows "Ads ready. Set budget to continue." message + BudgetForm. Calls POST /api/campaigns/[id]/checkout, redirects to Stripe checkout URL on success. Used when campaign status is "payment_pending". Props: campaignId.</div>
+        <div class="file-tags">
+          <span class="tag tag-uses">BudgetForm</span>
+          <span class="tag tag-dep">POST .../checkout</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- TYPES -->
+  <!-- ============================================ -->
+  <div class="section" data-section="types">
+    <div class="section-header">
+      <div class="icon" style="background:var(--yellow);">T</div>
+      <h2>TYPES</h2>
+      <span class="count">1 file</span>
+    </div>
+
+    <div class="file-row" data-search="database types Database Campaign Ad Metrics AdLibraryItem BrandProfile BrandAssets AdCopy Json">
+      <div class="file-path">src/types/database.ts</div>
+      <div class="file-info">
+        <div class="file-desc">Full Supabase Database type definition. Tables: profiles, campaigns (8 status values), ads (4 status values), metrics, ad_library, ad_config. Type aliases: Campaign, Ad, Metrics, AdLibraryItem. Interfaces: BrandProfile (category, tone, target_audience, key_value_props, product_name, competitor_ad_examples), BrandAssets (logoUrl, faviconUrl, productImages, brandColors, ogImage), AdCopy (headline, primaryText, description). Generic Json type.</div>
+        <div class="file-tags"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- CONFIG -->
+  <!-- ============================================ -->
+  <div class="section" data-section="config">
+    <div class="section-header">
+      <div class="icon" style="background:var(--red);">X</div>
+      <h2>CONFIG &amp; MIDDLEWARE</h2>
+      <span class="count">3 files</span>
+    </div>
+
+    <div class="file-row" data-search="middleware auth route protection redirect login signup dashboard onboard admin cookies matcher">
+      <div class="file-path">src/middleware.ts</div>
+      <div class="file-info">
+        <div class="file-desc">Next.js middleware. Creates Supabase SSR client with cookie handling. Protects /dashboard, /onboard, /admin (redirects to /login if unauthenticated). Redirects authenticated users away from /login and /signup (honors ?redirect param). Matcher excludes _next/static, _next/image, favicon.ico, and /api/webhooks.</div>
+        <div class="file-tags">
+          <span class="tag tag-ext">Supabase SSR</span>
+        </div>
+      </div>
+    </div>
+    <div class="file-row" data-search="vercel.json cron schedule hourly sync metrics">
+      <div class="file-path">vercel.json</div>
+      <div class="file-info">
+        <div class="file-desc">Vercel configuration. Defines one cron job: /api/cron/sync-metrics running at "0 * * * *" (every hour on the hour).</div>
+        <div class="file-tags">
+          <span class="tag tag-ext">Vercel</span>
+        </div>
+      </div>
+    </div>
+    <div class="file-row" data-search="globals.css styles variables fonts colors orange bg radius shadow">
+      <div class="file-path">src/app/globals.css</div>
+      <div class="file-info">
+        <div class="file-desc">Global CSS. Defines CSS variables (--bg: #FFFCF8, --orange: #FF4D00, etc.), font families (Bricolage Grotesque display, Inter body, IBM Plex Mono), utility classes (.btn-primary, .btn-secondary, .btn-ghost, .card, .badge, .input, .label, .heading-*, .spinner), and animations (floatIn, drift, blink-caret).</div>
+        <div class="file-tags"></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+function filterFiles() {
+  const query = document.getElementById('searchInput').value.toLowerCase().trim();
+  const rows = document.querySelectorAll('.file-row');
+  rows.forEach(row => {
+    if (!query) {
+      row.classList.remove('hidden');
+      return;
+    }
+    const searchText = (
+      row.getAttribute('data-search') + ' ' +
+      row.querySelector('.file-path').textContent + ' ' +
+      row.querySelector('.file-desc').textContent + ' ' +
+      Array.from(row.querySelectorAll('.tag')).map(t => t.textContent).join(' ')
+    ).toLowerCase();
+    const words = query.split(/\s+/);
+    const match = words.every(w => searchText.includes(w));
+    row.classList.toggle('hidden', !match);
+  });
+}
+</script>
+</body>
+</html>

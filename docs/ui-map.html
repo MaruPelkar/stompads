@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StompAds - UI Map</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #FFFCF8;
+    --orange: #FF4D00;
+    --text: #1a1a1a;
+    --text-light: #666;
+    --text-muted: #999;
+    --card-bg: #fff;
+    --card-border: rgba(0,0,0,0.08);
+    --green: #22c55e;
+    --blue: #3b82f6;
+    --purple: #8b5cf6;
+    --red: #ef4444;
+    --yellow: #f59e0b;
+    --pink: #ec4899;
+    --cyan: #06b6d4;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Bricolage Grotesque', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+  }
+  nav {
+    position: sticky; top: 0; z-index: 100;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 40px;
+    border-bottom: 1px solid var(--card-border);
+    background: rgba(255,252,248,0.92);
+    backdrop-filter: blur(16px);
+  }
+  .nav-brand {
+    font-size: 22px; font-weight: 800; letter-spacing: 2px;
+    color: var(--text); text-decoration: none;
+  }
+  .nav-brand span { color: var(--orange); }
+  .nav-links { display: flex; gap: 6px; }
+  .nav-links a {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px; letter-spacing: 1px; text-transform: uppercase;
+    padding: 8px 16px; border-radius: 8px;
+    text-decoration: none; color: var(--text);
+    border: 1px solid var(--card-border);
+    transition: all 0.2s;
+  }
+  .nav-links a:hover { border-color: var(--orange); color: var(--orange); }
+  .nav-links a.active { background: var(--orange); color: #fff; border-color: var(--orange); }
+
+  .container { max-width: 1200px; margin: 0 auto; padding: 40px 24px 80px; }
+  h1 { font-size: 48px; font-weight: 800; letter-spacing: -1px; margin-bottom: 8px; }
+  h1 span { color: var(--orange); }
+  .subtitle { font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: var(--text-light); letter-spacing: 0.5px; margin-bottom: 48px; }
+
+  /* Journey Map */
+  .journey {
+    display: flex; align-items: center; gap: 0;
+    padding: 24px; margin-bottom: 48px;
+    border: 1px solid var(--card-border); border-radius: 16px;
+    background: var(--card-bg); overflow-x: auto;
+  }
+  .journey-node {
+    flex: 0 0 auto; padding: 12px 20px;
+    border-radius: 10px; text-align: center;
+    border: 2px solid var(--card-border);
+    min-width: 110px;
+  }
+  .journey-node.current { border-color: var(--orange); background: rgba(255,77,0,0.04); }
+  .journey-node .j-route {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px; color: var(--text-muted); letter-spacing: 0.5px;
+  }
+  .journey-node .j-name { font-size: 13px; font-weight: 700; margin-top: 2px; }
+  .journey-arrow {
+    flex: 0 0 36px; text-align: center;
+    color: var(--orange); font-size: 18px; font-weight: 800;
+  }
+
+  /* Screen Cards */
+  .screen {
+    margin-bottom: 40px;
+    border: 1px solid var(--card-border);
+    border-radius: 16px;
+    background: var(--card-bg);
+    overflow: hidden;
+  }
+  .screen-header {
+    padding: 20px 28px;
+    border-bottom: 1px solid var(--card-border);
+    display: flex; align-items: center; gap: 12px;
+  }
+  .screen-header .route-badge {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px; font-weight: 600;
+    padding: 4px 10px; border-radius: 6px;
+    background: rgba(255,77,0,0.08); color: var(--orange);
+  }
+  .screen-header h2 { font-size: 20px; font-weight: 700; letter-spacing: 0.5px; }
+  .screen-header .render-type {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px; color: var(--text-muted);
+    margin-left: auto; letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+
+  .screen-body { padding: 24px 28px; }
+
+  .screen-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+
+  .info-block { margin-bottom: 20px; }
+  .info-block:last-child { margin-bottom: 0; }
+  .info-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px; font-weight: 600; letter-spacing: 1px;
+    text-transform: uppercase; color: var(--text-muted);
+    margin-bottom: 8px;
+  }
+
+  .element-list { list-style: none; padding: 0; }
+  .element-list li {
+    padding: 6px 12px;
+    border-left: 2px solid var(--card-border);
+    margin-bottom: 4px;
+    font-size: 13px;
+  }
+  .element-list li .el-type {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px; font-weight: 600;
+    padding: 1px 5px; border-radius: 3px;
+    margin-right: 6px;
+    vertical-align: middle;
+  }
+  .el-btn { background: #dbeafe; color: #1e40af; }
+  .el-input { background: #dcfce7; color: #166534; }
+  .el-link { background: #fae8ff; color: #7c3aed; }
+  .el-form { background: #fef3c7; color: #92400e; }
+  .el-display { background: #f1f5f9; color: #475569; }
+  .el-video { background: #ffe4e6; color: #9f1239; }
+  .el-condition { background: #fff7ed; color: #c2410c; }
+
+  .api-call-list { list-style: none; padding: 0; }
+  .api-call-list li {
+    padding: 5px 0;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px; color: var(--text-light);
+  }
+  .api-call-list .method {
+    font-weight: 600; display: inline-block;
+    min-width: 36px; color: var(--text);
+  }
+  .api-call-list .method.get { color: var(--green); }
+  .api-call-list .method.post { color: var(--blue); }
+
+  .state-list { list-style: none; padding: 0; }
+  .state-list li {
+    padding: 4px 0;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px; color: var(--text-light);
+  }
+  .state-list .state-name { font-weight: 600; color: var(--text); }
+  .state-list .state-type { color: var(--text-muted); }
+
+  .component-list { list-style: none; padding: 0; }
+  .component-list li {
+    padding: 4px 0;
+    font-size: 12px; color: var(--text-light);
+  }
+  .component-list .comp-name {
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 600; color: var(--purple);
+  }
+
+  /* Conditional UI */
+  .condition-block {
+    margin-top: 16px; padding: 16px;
+    border: 1px solid var(--card-border);
+    border-radius: 12px; background: var(--bg);
+  }
+  .condition-block h4 {
+    font-size: 13px; font-weight: 700; margin-bottom: 10px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .condition-block h4 .cond-dot {
+    width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+  }
+  .condition-desc {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px; color: var(--text-light); line-height: 1.6;
+  }
+
+  .divider {
+    height: 1px; background: var(--card-border); margin: 20px 0;
+  }
+
+  @media (max-width: 768px) {
+    nav { padding: 12px 16px; }
+    .container { padding: 24px 16px 60px; }
+    h1 { font-size: 32px; }
+    .journey { flex-direction: column; }
+    .journey-arrow { transform: rotate(90deg); }
+    .screen-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<nav>
+  <a href="data-flow.html" class="nav-brand">STOMP<span>ADS</span> <span style="font-size:12px;font-weight:400;letter-spacing:0;color:var(--text-muted)">docs</span></a>
+  <div class="nav-links">
+    <a href="data-flow.html">Data Flow</a>
+    <a href="codebase.html">Codebase</a>
+    <a href="ui-map.html" class="active">UI Map</a>
+  </div>
+</nav>
+
+<div class="container">
+  <h1>UI <span>MAP</span></h1>
+  <p class="subtitle">Every screen, component, interactive element, API call, and conditional UI state in the application.</p>
+
+  <!-- ============================================ -->
+  <!-- USER JOURNEY -->
+  <!-- ============================================ -->
+  <div class="journey">
+    <div class="journey-node">
+      <div class="j-route">/</div>
+      <div class="j-name">Landing</div>
+    </div>
+    <div class="journey-arrow">&rarr;</div>
+    <div class="journey-node">
+      <div class="j-route">/signup</div>
+      <div class="j-name">Sign Up</div>
+    </div>
+    <div class="journey-arrow">&rarr;</div>
+    <div class="journey-node current">
+      <div class="j-route">/onboard</div>
+      <div class="j-name">Onboard</div>
+    </div>
+    <div class="journey-arrow">&rarr;</div>
+    <div class="journey-node">
+      <div class="j-route">stripe</div>
+      <div class="j-name">Payment</div>
+    </div>
+    <div class="journey-arrow">&rarr;</div>
+    <div class="journey-node">
+      <div class="j-route">/onboard/success</div>
+      <div class="j-name">Confirmed</div>
+    </div>
+    <div class="journey-arrow">&rarr;</div>
+    <div class="journey-node">
+      <div class="j-route">/dashboard/[id]</div>
+      <div class="j-name">Go Live</div>
+    </div>
+    <div class="journey-arrow">&rarr;</div>
+    <div class="journey-node">
+      <div class="j-route">/dashboard</div>
+      <div class="j-name">Dashboard</div>
+    </div>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- LANDING PAGE -->
+  <!-- ============================================ -->
+  <div class="screen">
+    <div class="screen-header">
+      <span class="route-badge">/</span>
+      <h2>Landing Page</h2>
+      <span class="render-type">Client Component</span>
+    </div>
+    <div class="screen-body">
+      <div class="screen-grid">
+        <div>
+          <div class="info-block">
+            <div class="info-label">Interactive Elements</div>
+            <ul class="element-list">
+              <li><span class="el-type el-input">INPUT</span>URL text input with animated placeholder cycling through sample sites (acmecoffee.com, freshpetfoods.co, novafit.studio, etc.)</li>
+              <li><span class="el-type el-btn">BUTTON</span>"LAUNCH MY ADS" / "LAUNCHING..." - triggers navigation based on auth state</li>
+              <li><span class="el-type el-link">LINK</span>STOMPADS logo (/) in nav</li>
+              <li><span class="el-type el-link">LINK</span>"Dashboard" (if logged in) or "Log in" (if not) in nav</li>
+              <li><span class="el-type el-link">LINK</span>Footer: Privacy (/privacy), Terms (/terms)</li>
+              <li><span class="el-type el-display">DISPLAY</span>6 floating ad cards (4 images + 1 video + play button) with drift animations</li>
+              <li><span class="el-type el-display">DISPLAY</span>Headline: "RUN ADS. NOT HEADACHES."</li>
+              <li><span class="el-type el-display">DISPLAY</span>Subtitle: "Paste your URL. We do the rest. Ads go live in minutes."</li>
+              <li><span class="el-type el-display">DISPLAY</span>"Free to try. No credit card. No setup."</li>
+            </ul>
+          </div>
+
+          <div class="info-block">
+            <div class="info-label">State</div>
+            <ul class="state-list">
+              <li><span class="state-name">url</span> <span class="state-type">string</span> - user-entered URL value</li>
+              <li><span class="state-name">typingText</span> <span class="state-type">string</span> - animated placeholder text</li>
+              <li><span class="state-name">userFocused</span> <span class="state-type">boolean</span> - stops animation when user focuses input</li>
+              <li><span class="state-name">launching</span> <span class="state-type">boolean</span> - disables button during navigation</li>
+              <li><span class="state-name">isLoggedIn</span> <span class="state-type">boolean</span> - checked on mount via supabase.auth.getUser()</li>
+            </ul>
+          </div>
+        </div>
+        <div>
+          <div class="info-block">
+            <div class="info-label">API Calls</div>
+            <ul class="api-call-list">
+              <li><span class="method">AUTH</span> supabase.auth.getUser() on mount (checks login state)</li>
+            </ul>
+          </div>
+
+          <div class="info-block">
+            <div class="info-label">Navigation Logic</div>
+            <div class="condition-desc" style="margin-top:4px;">
+              <strong>On "LAUNCH MY ADS" click:</strong><br>
+              &bull; URL entered + logged in &rarr; /onboard?url={url}<br>
+              &bull; URL entered + not logged in &rarr; /signup?redirect=/onboard?url={url}<br>
+              &bull; No URL + logged in &rarr; /onboard<br>
+              &bull; No URL + not logged in &rarr; /signup<br><br>
+              <strong>On Enter key:</strong> same as button click<br>
+              <strong>Nav link:</strong> logged in shows "Dashboard" &rarr; /dashboard; not logged in shows "Log in" &rarr; /login
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- LOGIN -->
+  <!-- ============================================ -->
+  <div class="screen">
+    <div class="screen-header">
+      <span class="route-badge">/login</span>
+      <h2>Login Page</h2>
+      <span class="render-type">Client Component</span>
+    </div>
+    <div class="screen-body">
+      <div class="screen-grid">
+        <div>
+          <div class="info-block">
+            <div class="info-label">Interactive Elements</div>
+            <ul class="element-list">
+              <li><span class="el-type el-input">INPUT</span>Email (type=email, required, placeholder "you@example.com")</li>
+              <li><span class="el-type el-input">INPUT</span>Password (type=password, required, placeholder "--------")</li>
+              <li><span class="el-type el-btn">BUTTON</span>"LOG IN" / "LOGGING IN..." (submit)</li>
+              <li><span class="el-type el-link">LINK</span>"Sign up" &rarr; /signup</li>
+              <li><span class="el-type el-display">DISPLAY</span>Error message box (conditional)</li>
+            </ul>
+          </div>
+          <div class="info-block">
+            <div class="info-label">Layout</div>
+            <div class="condition-desc">Auth layout: centered card, max-w-sm, STOMPADS logo, "Ads on autopilot" tagline.</div>
+          </div>
+        </div>
+        <div>
+          <div class="info-block">
+            <div class="info-label">State</div>
+            <ul class="state-list">
+              <li><span class="state-name">email</span> <span class="state-type">string</span></li>
+              <li><span class="state-name">password</span> <span class="state-type">string</span></li>
+              <li><span class="state-name">error</span> <span class="state-type">string | null</span></li>
+              <li><span class="state-name">loading</span> <span class="state-type">boolean</span></li>
+            </ul>
+          </div>
+          <div class="info-block">
+            <div class="info-label">API Calls</div>
+            <ul class="api-call-list">
+              <li><span class="method post">AUTH</span> supabase.auth.signInWithPassword({ email, password })</li>
+            </ul>
+          </div>
+          <div class="info-block">
+            <div class="info-label">Navigation</div>
+            <div class="condition-desc">On success &rarr; /dashboard. Middleware also redirects authenticated users to /dashboard (honors ?redirect param).</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- SIGNUP -->
+  <!-- ============================================ -->
+  <div class="screen">
+    <div class="screen-header">
+      <span class="route-badge">/signup</span>
+      <h2>Signup Page</h2>
+      <span class="render-type">Client Component</span>
+    </div>
+    <div class="screen-body">
+      <div class="screen-grid">
+        <div>
+          <div class="info-block">
+            <div class="info-label">Interactive Elements</div>
+            <ul class="element-list">
+              <li><span class="el-type el-input">INPUT</span>Email (type=email, required, placeholder "you@example.com")</li>
+              <li><span class="el-type el-input">INPUT</span>Password (type=password, required, minLength=6, placeholder "6+ characters")</li>
+              <li><span class="el-type el-btn">BUTTON</span>"CREATE ACCOUNT" / "CREATING ACCOUNT..." (submit)</li>
+              <li><span class="el-type el-link">LINK</span>"Log in" &rarr; /login</li>
+              <li><span class="el-type el-display">DISPLAY</span>Error message box (conditional)</li>
+            </ul>
+          </div>
+        </div>
+        <div>
+          <div class="info-block">
+            <div class="info-label">State</div>
+            <ul class="state-list">
+              <li><span class="state-name">email</span> <span class="state-type">string</span></li>
+              <li><span class="state-name">password</span> <span class="state-type">string</span></li>
+              <li><span class="state-name">error</span> <span class="state-type">string | null</span></li>
+              <li><span class="state-name">loading</span> <span class="state-type">boolean</span></li>
+            </ul>
+          </div>
+          <div class="info-block">
+            <div class="info-label">API Calls</div>
+            <ul class="api-call-list">
+              <li><span class="method post">AUTH</span> supabase.auth.signUp({ email, password })</li>
+            </ul>
+          </div>
+          <div class="info-block">
+            <div class="info-label">Navigation</div>
+            <div class="condition-desc">On success &rarr; ?redirect param (e.g. /onboard?url=...) or /onboard. Wrapped in Suspense for useSearchParams.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- ONBOARD -->
+  <!-- ============================================ -->
+  <div class="screen">
+    <div class="screen-header">
+      <span class="route-badge">/onboard</span>
+      <h2>Onboard Page (Wizard)</h2>
+      <span class="render-type">Client Component</span>
+    </div>
+    <div class="screen-body">
+      <div class="info-block">
+        <div class="info-label">Components Used</div>
+        <ul class="component-list">
+          <li><span class="comp-name">UrlForm</span> - URL input + GO button (step: url)</li>
+          <li><span class="comp-name">AdPreview</span> - Video ad previews (step: preview)</li>
+          <li><span class="comp-name">BudgetForm</span> - Daily budget input (step: preview)</li>
+        </ul>
+      </div>
+
+      <div class="info-block">
+        <div class="info-label">State</div>
+        <ul class="state-list">
+          <li><span class="state-name">step</span> <span class="state-type">'url' | 'generating' | 'preview' | 'checkout'</span> - wizard step</li>
+          <li><span class="state-name">campaignId</span> <span class="state-type">string | null</span> - created campaign ID</li>
+          <li><span class="state-name">hasProfile</span> <span class="state-type">boolean</span> - brand profile loaded (progress indicator)</li>
+          <li><span class="state-name">ads</span> <span class="state-type">Ad[]</span> - generated ads</li>
+          <li><span class="state-name">error</span> <span class="state-type">string | null</span></li>
+          <li><span class="state-name">progressIndex</span> <span class="state-type">number</span> - 0-5 index into progress steps</li>
+        </ul>
+      </div>
+
+      <div class="info-block">
+        <div class="info-label">API Calls</div>
+        <ul class="api-call-list">
+          <li><span class="method post">POST</span> /api/campaigns/create &mdash; { url } &rarr; { campaignId }</li>
+          <li><span class="method get">GET</span> /api/campaigns/[id]/status &mdash; polled every 3s during generation</li>
+          <li><span class="method post">POST</span> /api/campaigns/[id]/checkout &mdash; { dailyBudgetCents } &rarr; { checkoutUrl }</li>
+        </ul>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="info-block">
+        <div class="info-label">Conditional UI - Step by Step</div>
+      </div>
+
+      <div class="condition-block">
+        <h4><span class="cond-dot" style="background:var(--blue);"></span>Step: url</h4>
+        <ul class="element-list">
+          <li><span class="el-type el-display">DISPLAY</span>Heading: "DROP YOUR URL"</li>
+          <li><span class="el-type el-display">DISPLAY</span>Subtext: "We handle the rest. Ads go live when you say go."</li>
+          <li><span class="el-type el-input">INPUT</span>URL text field (placeholder "yourwebsite.com")</li>
+          <li><span class="el-type el-btn">BUTTON</span>"GO" (submit) / "ON IT..." (loading)</li>
+        </ul>
+        <div class="condition-desc" style="margin-top:8px;">
+          Auto-starts if ?url query param is present (skips this step, goes directly to generating). Only fires once (autoStarted ref).
+        </div>
+      </div>
+
+      <div class="condition-block">
+        <h4><span class="cond-dot" style="background:var(--orange);"></span>Step: generating</h4>
+        <ul class="element-list">
+          <li><span class="el-type el-display">DISPLAY</span>Spinner (centered)</li>
+          <li><span class="el-type el-display">DISPLAY</span>6-step progress indicator with circle markers:</li>
+        </ul>
+        <div class="condition-desc" style="margin-top:8px; padding-left:16px;">
+          1. "Scanning your website" (scrape)<br>
+          2. "Locking in your brand" (profile)<br>
+          3. "Writing ad scripts" (scripts)<br>
+          4. "Producing video 1" (video1)<br>
+          5. "Producing video 2" (video2)<br>
+          6. "Burning in captions" (subtitles)<br><br>
+          Progress auto-advances every 12s, plus jumps based on polling: brandProfile received &rarr; index 3; 1 ad received &rarr; index 4; 2 ads &rarr; index 5.<br>
+          Completed steps: green circle with checkmark. Current step: orange circle, "..." suffix, bold. Future: gray circle.<br><br>
+          If hasProfile=true, shows message: "Understood. Creating your ads now."
+        </div>
+      </div>
+
+      <div class="condition-block">
+        <h4><span class="cond-dot" style="background:var(--green);"></span>Step: preview</h4>
+        <ul class="element-list">
+          <li><span class="el-type el-display">DISPLAY</span>Heading: "ADS READY"</li>
+          <li><span class="el-type el-display">DISPLAY</span>Ad count: "N video ads -- Instagram Stories & Reels"</li>
+          <li><span class="el-type el-video">VIDEO</span>Video previews in horizontal row (140x248px each, with controls)</li>
+          <li><span class="el-type el-display">DISPLAY</span>Heading: "DAILY BUDGET"</li>
+          <li><span class="el-type el-input">INPUT</span>Budget number input with $ prefix (default 50, range $10-$10,000)</li>
+          <li><span class="el-type el-display">DISPLAY</span>"Enter a number between $10 to $10K"</li>
+          <li><span class="el-type el-display">DISPLAY</span>"We take a 10% cut as a publishing platform."</li>
+          <li><span class="el-type el-btn">BUTTON</span>"CONFIRM & LAUNCH" / "PROCESSING..."</li>
+          <li><span class="el-type el-display">DISPLAY</span>Validation error (conditional)</li>
+        </ul>
+      </div>
+
+      <div class="condition-block">
+        <h4><span class="cond-dot" style="background:var(--purple);"></span>Step: checkout</h4>
+        <ul class="element-list">
+          <li><span class="el-type el-display">DISPLAY</span>Green spinner + "Redirecting to payment..."</li>
+        </ul>
+        <div class="condition-desc" style="margin-top:8px;">Browser redirected to Stripe checkout via window.location.href.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- SUCCESS -->
+  <!-- ============================================ -->
+  <div class="screen">
+    <div class="screen-header">
+      <span class="route-badge">/onboard/success</span>
+      <h2>Payment Success</h2>
+      <span class="render-type">Server Component</span>
+    </div>
+    <div class="screen-body">
+      <div class="screen-grid">
+        <div>
+          <div class="info-block">
+            <div class="info-label">Interactive Elements</div>
+            <ul class="element-list">
+              <li><span class="el-type el-display">DISPLAY</span>Heading: "CONFIRMED" (green color)</li>
+              <li><span class="el-type el-display">DISPLAY</span>"Payment received. Hit Go Live to start your ads."</li>
+              <li><span class="el-type el-btn">BUTTON</span>"GO LIVE NOW" &rarr; /dashboard/{campaign_id} (if campaign_id param present)</li>
+              <li><span class="el-type el-btn">BUTTON</span>"GO TO DASHBOARD" &rarr; /dashboard (fallback if no campaign_id)</li>
+            </ul>
+          </div>
+        </div>
+        <div>
+          <div class="info-block">
+            <div class="info-label">Query Params</div>
+            <div class="condition-desc">?campaign_id - set by Stripe success_url redirect. Controls which button/link is shown.</div>
+          </div>
+          <div class="info-block">
+            <div class="info-label">API Calls</div>
+            <div class="condition-desc">None. Static server-rendered page.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- CANCEL -->
+  <!-- ============================================ -->
+  <div class="screen">
+    <div class="screen-header">
+      <span class="route-badge">/onboard/cancel</span>
+      <h2>Payment Cancel</h2>
+      <span class="render-type">Server Component</span>
+    </div>
+    <div class="screen-body">
+      <div class="info-block">
+        <div class="info-label">Interactive Elements</div>
+        <ul class="element-list">
+          <li><span class="el-type el-display">DISPLAY</span>Heading: "CANCELLED"</li>
+          <li><span class="el-type el-display">DISPLAY</span>"No charge. Your ads are still here when you're ready."</li>
+          <li><span class="el-type el-link">LINK</span>"GO BACK" &rarr; /onboard?campaign_id={id} (if param) or /onboard</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- DASHBOARD -->
+  <!-- ============================================ -->
+  <div class="screen">
+    <div class="screen-header">
+      <span class="route-badge">/dashboard</span>
+      <h2>Dashboard (Campaign List)</h2>
+      <span class="render-type">Server Component</span>
+    </div>
+    <div class="screen-body">
+      <div class="screen-grid">
+        <div>
+          <div class="info-block">
+            <div class="info-label">Interactive Elements</div>
+            <ul class="element-list">
+              <li><span class="el-type el-display">DISPLAY</span>Heading: "YOUR CAMPAIGNS"</li>
+              <li><span class="el-type el-link">LINK</span>"+ New campaign" &rarr; /onboard</li>
+              <li><span class="el-type el-link">LINK</span>Each campaign card (clickable) with hover effect</li>
+              <li><span class="el-type el-display">DISPLAY</span>Per card: URL, daily budget "$X/day" or "No budget set"</li>
+              <li><span class="el-type el-display">DISPLAY</span>Status badge (live=green, ready=blue, default=gray)</li>
+              <li><span class="el-type el-display">DISPLAY</span>"Resume &rarr;" label for draft/payment_pending/ready campaigns</li>
+            </ul>
+          </div>
+          <div class="info-block">
+            <div class="info-label">Empty State</div>
+            <ul class="element-list">
+              <li><span class="el-type el-display">DISPLAY</span>Heading: "NO CAMPAIGNS YET"</li>
+              <li><span class="el-type el-display">DISPLAY</span>"Drop a URL. Get ads. Get traffic."</li>
+              <li><span class="el-type el-btn">BUTTON</span>"START NOW" &rarr; /onboard</li>
+            </ul>
+          </div>
+        </div>
+        <div>
+          <div class="info-block">
+            <div class="info-label">Data Fetching (Server)</div>
+            <ul class="api-call-list">
+              <li><span class="method">DB</span> supabase.auth.getUser()</li>
+              <li><span class="method">DB</span> campaigns SELECT where user_id, ordered DESC</li>
+            </ul>
+          </div>
+          <div class="info-block">
+            <div class="info-label">Navigation Logic per Status</div>
+            <div class="condition-desc">
+              <strong>generating</strong> &rarr; /dashboard/{id} (show progress)<br>
+              <strong>payment_pending</strong> &rarr; /dashboard/{id} (resume checkout)<br>
+              <strong>ready</strong> &rarr; /dashboard/{id} (go live)<br>
+              <strong>preview_ready</strong> &rarr; /dashboard/{id}<br>
+              <strong>draft</strong> &rarr; /onboard?url={url} (restart)<br>
+              <strong>live</strong> &rarr; /dashboard/{id} (view metrics)<br>
+              <strong>paused</strong> &rarr; /dashboard/{id} (resume)
+            </div>
+          </div>
+          <div class="info-block">
+            <div class="info-label">Status Labels in UI</div>
+            <div class="condition-desc">
+              live &rarr; "live"<br>
+              ready &rarr; "ready"<br>
+              generating / generating_full &rarr; "processing"<br>
+              payment_pending &rarr; "awaiting payment"<br>
+              preview_ready &rarr; "ready"<br>
+              Others &rarr; raw status string
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- CAMPAIGN DETAIL -->
+  <!-- ============================================ -->
+  <div class="screen">
+    <div class="screen-header">
+      <span class="route-badge">/dashboard/[campaignId]</span>
+      <h2>Campaign Detail</h2>
+      <span class="render-type">Server Component + Client Islands</span>
+    </div>
+    <div class="screen-body">
+      <div class="info-block">
+        <div class="info-label">Components Used</div>
+        <ul class="component-list">
+          <li><span class="comp-name">GoLiveButton</span> - "GO LIVE" action (client, shown when status=ready)</li>
+          <li><span class="comp-name">PauseResumeButton</span> - Pause/Resume toggle (client, shown when live or paused)</li>
+          <li><span class="comp-name">ResumeCheckout</span> - Budget form + checkout redirect (client, shown when payment_pending)</li>
+        </ul>
+      </div>
+
+      <div class="info-block">
+        <div class="info-label">Data Fetching (Server)</div>
+        <ul class="api-call-list">
+          <li><span class="method">DB</span> supabase.auth.getUser()</li>
+          <li><span class="method">DB</span> campaigns SELECT by id + user_id (single)</li>
+          <li><span class="method">DB</span> ads SELECT by campaign_id, ordered by created_at</li>
+          <li><span class="method">DB</span> metrics SELECT by ad_ids, ordered by recorded_at DESC (latest per ad)</li>
+        </ul>
+      </div>
+
+      <div class="info-block">
+        <div class="info-label">Always-Visible Elements</div>
+        <ul class="element-list">
+          <li><span class="el-type el-display">DISPLAY</span>Header: product name (or URL as fallback) + URL + status badge</li>
+        </ul>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="info-block">
+        <div class="info-label">Conditional UI by Campaign Status</div>
+      </div>
+
+      <div class="condition-block">
+        <h4><span class="cond-dot" style="background:var(--green);"></span>Status: live or paused (isRunning)</h4>
+        <ul class="element-list">
+          <li><span class="el-type el-display">DISPLAY</span>Compact summary bar: "$X/day", "$X.XX spent", "N clicks", "N impressions" (mono font, inline)</li>
+          <li><span class="el-type el-btn">BUTTON</span>"PAUSE ADS" (ghost, red text) when live / "RESUME ADS" (primary) when paused</li>
+        </ul>
+        <div class="condition-desc" style="margin-top:8px;">Heading uses heading-md (smaller). PauseResumeButton calls POST .../pause with action.</div>
+      </div>
+
+      <div class="condition-block">
+        <h4><span class="cond-dot" style="background:var(--blue);"></span>Status: not running + has daily_budget</h4>
+        <ul class="element-list">
+          <li><span class="el-type el-display">DISPLAY</span>3-column metric cards: Daily Budget "$X/day", Total Spend "$X.XX", Total Clicks "N" (26px display font)</li>
+        </ul>
+      </div>
+
+      <div class="condition-block">
+        <h4><span class="cond-dot" style="background:var(--orange);"></span>Status: generating</h4>
+        <ul class="element-list">
+          <li><span class="el-type el-display">DISPLAY</span>Centered spinner + "Still processing."</li>
+          <li><span class="el-type el-display">DISPLAY</span>"If stuck, try again."</li>
+          <li><span class="el-type el-link">LINK</span>"Retry" &rarr; /onboard?url={campaign.url}</li>
+        </ul>
+      </div>
+
+      <div class="condition-block">
+        <h4><span class="cond-dot" style="background:var(--text-muted);"></span>Status: draft (failed)</h4>
+        <ul class="element-list">
+          <li><span class="el-type el-display">DISPLAY</span>"Campaign failed."</li>
+          <li><span class="el-type el-btn">BUTTON</span>"Try Again" &rarr; /onboard?url={campaign.url}</li>
+        </ul>
+      </div>
+
+      <div class="condition-block">
+        <h4><span class="cond-dot" style="background:var(--yellow);"></span>Status: payment_pending (+ has ads)</h4>
+        <ul class="element-list">
+          <li><span class="el-type el-display">DISPLAY</span>"Ads ready. Set budget to continue." (orange, bold)</li>
+          <li><span class="el-type el-form">FORM</span>BudgetForm component (budget input + "CONFIRM & LAUNCH")</li>
+        </ul>
+        <div class="condition-desc" style="margin-top:8px;">ResumeCheckout component: calls POST .../checkout, redirects to Stripe on success.</div>
+      </div>
+
+      <div class="condition-block">
+        <h4><span class="cond-dot" style="background:var(--purple);"></span>Status: ready</h4>
+        <ul class="element-list">
+          <li><span class="el-type el-btn">BUTTON</span>"GO LIVE" (22px, 3px letter spacing, full width) / "LAUNCHING..."</li>
+          <li><span class="el-type el-display">DISPLAY</span>Error box (conditional)</li>
+        </ul>
+        <div class="condition-desc" style="margin-top:8px;">GoLiveButton component: calls POST .../go-live, refreshes page on success.</div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="condition-block">
+        <h4><span class="cond-dot" style="background:var(--cyan);"></span>Ads Section (when ads exist)</h4>
+        <ul class="element-list">
+          <li><span class="el-type el-display">DISPLAY</span>Heading: "YOUR ADS"</li>
+          <li><span class="el-type el-display">DISPLAY</span>2-column grid of LiveAdCard components</li>
+        </ul>
+        <div class="condition-desc" style="margin-top:8px;">
+          <strong>Each LiveAdCard shows:</strong><br>
+          &bull; Video player (280px height, autoplay muted loop) or empty bg<br>
+          &bull; Type label: "video 9:16" etc. + status badge<br>
+          &bull; If metrics exist: 2x2 grid of Impressions, Clicks, CTR (orange, percent), CPC (dollar), Spend (dollar, full width)<br>
+          &bull; If no metrics: "Metrics sync hourly. Check back soon."
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- ADMIN LIBRARY -->
+  <!-- ============================================ -->
+  <div class="screen">
+    <div class="screen-header">
+      <span class="route-badge">/admin/library</span>
+      <h2>Admin - Ad Template Library</h2>
+      <span class="render-type">Client Component</span>
+    </div>
+    <div class="screen-body">
+      <div class="screen-grid">
+        <div>
+          <div class="info-block">
+            <div class="info-label">Interactive Elements</div>
+            <ul class="element-list">
+              <li><span class="el-type el-display">DISPLAY</span>Heading: "Ad Template Library"</li>
+              <li><span class="el-type el-form">FORM</span>"Add New Template" form (dark bg card):</li>
+              <li><span class="el-type el-input">INPUT</span>Category (text, required, placeholder "e.g. ecommerce, saas, fitness")</li>
+              <li><span class="el-type el-input">TEXTAREA</span>Prompt Inspiration (4 rows, required)</li>
+              <li><span class="el-type el-input">INPUT</span>Notes (text, optional)</li>
+              <li><span class="el-type el-input">INPUT</span>Reference Visual (file, accept image/*,video/*, optional)</li>
+              <li><span class="el-type el-btn">BUTTON</span>"Save Template" / "Saving..." (blue bg)</li>
+              <li><span class="el-type el-display">DISPLAY</span>Success/error message</li>
+              <li><span class="el-type el-display">DISPLAY</span>Template list: each card shows category badge, date, prompt snippet (2-line clamp), notes</li>
+            </ul>
+          </div>
+        </div>
+        <div>
+          <div class="info-block">
+            <div class="info-label">State</div>
+            <ul class="state-list">
+              <li><span class="state-name">items</span> <span class="state-type">AdLibraryItem[]</span></li>
+              <li><span class="state-name">category</span> <span class="state-type">string</span></li>
+              <li><span class="state-name">prompt</span> <span class="state-type">string</span></li>
+              <li><span class="state-name">notes</span> <span class="state-type">string</span></li>
+              <li><span class="state-name">file</span> <span class="state-type">File | null</span></li>
+              <li><span class="state-name">loading</span> <span class="state-type">boolean</span></li>
+              <li><span class="state-name">message</span> <span class="state-type">string | null</span></li>
+            </ul>
+          </div>
+          <div class="info-block">
+            <div class="info-label">API Calls</div>
+            <ul class="api-call-list">
+              <li><span class="method get">GET</span> /api/admin/library (on mount, fetches all templates)</li>
+              <li><span class="method post">POST</span> /api/admin/library (FormData: category, prompt, notes, visual file)</li>
+            </ul>
+          </div>
+          <div class="info-block">
+            <div class="info-label">Access Control</div>
+            <div class="condition-desc">API routes check if user email matches ADMIN_EMAIL env var. 403 Forbidden otherwise. Page itself is behind /admin route (protected by middleware).</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- APP LAYOUT -->
+  <!-- ============================================ -->
+  <div class="screen">
+    <div class="screen-header">
+      <span class="route-badge">(app) layout</span>
+      <h2>App Layout (wraps /dashboard, /onboard, /admin)</h2>
+      <span class="render-type">Server Component</span>
+    </div>
+    <div class="screen-body">
+      <div class="info-block">
+        <div class="info-label">Layout Elements</div>
+        <ul class="element-list">
+          <li><span class="el-type el-link">LINK</span>STOMPADS logo (top-left) &rarr; /dashboard</li>
+          <li><span class="el-type el-link">LINK</span>"Dashboard" nav link &rarr; /dashboard</li>
+          <li><span class="el-type el-link">LINK</span>"+ New" button (secondary) &rarr; /onboard</li>
+          <li><span class="el-type el-display">DISPLAY</span>Top nav bar (sticky, frosted glass effect, border-bottom)</li>
+          <li><span class="el-type el-display">DISPLAY</span>Main content area (max-width 960px, centered, 36px top padding)</li>
+        </ul>
+      </div>
+      <div class="info-block">
+        <div class="info-label">Auth Check</div>
+        <div class="condition-desc">Server-side: supabase.auth.getUser(). If no user, redirects to /login. This is in addition to middleware protection.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================ -->
+  <!-- AUTH LAYOUT -->
+  <!-- ============================================ -->
+  <div class="screen">
+    <div class="screen-header">
+      <span class="route-badge">(auth) layout</span>
+      <h2>Auth Layout (wraps /login, /signup)</h2>
+      <span class="render-type">Server Component</span>
+    </div>
+    <div class="screen-body">
+      <div class="info-block">
+        <div class="info-label">Layout Elements</div>
+        <ul class="element-list">
+          <li><span class="el-type el-display">DISPLAY</span>Centered container (min-h-screen, flex center)</li>
+          <li><span class="el-type el-link">LINK</span>STOMPADS logo (32px, centered) &rarr; /</li>
+          <li><span class="el-type el-display">DISPLAY</span>"Ads on autopilot." tagline below logo</li>
+          <li><span class="el-type el-display">DISPLAY</span>Content card (max-w-sm, 24px horizontal padding)</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>
