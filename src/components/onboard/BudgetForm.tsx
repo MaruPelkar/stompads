@@ -8,7 +8,7 @@ interface Props {
 }
 
 export function BudgetForm({ onSubmit, loading }: Props) {
-  const [budget, setBudget] = useState('')
+  const [budget, setBudget] = useState('50')
   const [error, setError] = useState<string | null>(null)
 
   function handleSubmit(e: React.FormEvent) {
