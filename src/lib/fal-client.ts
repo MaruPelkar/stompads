@@ -171,24 +171,25 @@ async function addSubtitles(
     const config = await getAdConfig()
     const sub = config.subtitle
 
-    const result = await fal.subscribe(FAL_SUBTITLE_MODEL, {
-      input: {
-        video_url: videoUrl,
-        language: sub.language,
-        font_name: sub.fontName,
-        font_size: sub.fontSize,
-        font_weight: sub.fontWeight as 'bold' | 'normal' | 'black',
-        font_color: sub.fontColor,
-        highlight_color: sub.highlightColor,
-        stroke_width: sub.strokeWidth,
-        stroke_color: sub.strokeColor,
-        background_color: sub.backgroundColor,
-        position: sub.position,
-        y_offset: sub.yOffset,
-        words_per_subtitle: sub.wordsPerSubtitle,
-        enable_animation: sub.enableAnimation,
-      },
-    })
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const subtitleInput: any = {
+      video_url: videoUrl,
+      language: sub.language,
+      font_name: sub.fontName,
+      font_size: sub.fontSize,
+      font_weight: sub.fontWeight,
+      font_color: sub.fontColor,
+      highlight_color: sub.highlightColor,
+      stroke_width: sub.strokeWidth,
+      stroke_color: sub.strokeColor,
+      background_color: sub.backgroundColor,
+      position: sub.position,
+      y_offset: sub.yOffset,
+      words_per_subtitle: sub.wordsPerSubtitle,
+      enable_animation: sub.enableAnimation,
+    }
+
+    const result = await fal.subscribe(FAL_SUBTITLE_MODEL, { input: subtitleInput })
     const data = result.data as FalSubtitleOutput
 
     const subtitledUrl = data?.video?.url
