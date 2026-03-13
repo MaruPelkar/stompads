@@ -7,7 +7,8 @@ async function metaFetch(path: string, method: 'GET' | 'POST' = 'POST', body?: R
   const url = `${META_API_BASE}${path}`
   const params = new URLSearchParams({ access_token: ACCESS_TOKEN })
 
-  const res = await fetch(method === 'GET' ? `${url}?${params}` : url, {
+  const separator = url.includes('?') ? '&' : '?'
+  const res = await fetch(method === 'GET' ? `${url}${separator}${params}` : url, {
     method,
     headers: method === 'POST' ? { 'Content-Type': 'application/x-www-form-urlencoded' } : undefined,
     body: method === 'POST' ? new URLSearchParams({
