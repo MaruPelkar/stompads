@@ -113,24 +113,55 @@ export async function createVideoAdCreative(
   description: string,
   websiteUrl: string,
 ): Promise<string> {
-  // Upload video
+  // Step 1: Upload video
   const uploadData = await metaFetch(`/${AD_ACCOUNT_ID}/advideos`, 'POST', {
     file_url: videoUrl,
     name: `Stompads Video ${Date.now()}`,
   })
   const videoId = uploadData.id
 
-  // Create creative — no image_hash, let Meta auto-generate thumbnail
+  // Step 2: Wait for video to finish processing on Meta
+  // Poll video status until it has a 'picture' field (meaning processing is done)
+  let pictureUrl: string | null = null
+  for (let attempt = 0; attempt < 40; attempt++) {
+    await new Promise(r => setTimeout(r, 3000)) // 3s between attempts, up to 120s total
+    try {
+      const videoInfo = await metaFetch(`/${videoId}?fields=status,picture`, 'GET')
+      if (videoInfo?.picture) {
+        pictureUrl = videoInfo.picture
+        break
+      }
+      // If status is 'ready', picture should be available
+      if (videoInfo?.status?.video_status === 'ready' || videoInfo?.status?.processing_phase === 'complete') {
+        pictureUrl = videoInfo.picture || null
+        if (pictureUrl) break
+      }
+    } catch {
+      // Keep trying
+    }
+  }
+
+  // Step 3: Create creative with image_url (Meta's own picture URL)
+  const videoData: Record<string, unknown> = {
+    video_id: videoId,
+    title: headline,
+    message: primaryText,
+    call_to_action: { type: 'LEARN_MORE', value: { link: websiteUrl } },
+  }
+
+  if (pictureUrl) {
+    videoData.image_url = pictureUrl
+  } else {
+    // Last resort: use the original video URL's first frame
+    // Meta sometimes accepts the source video URL as image_url
+    videoData.image_url = videoUrl
+  }
+
   const data = await metaFetch(`/${AD_ACCOUNT_ID}/adcreatives`, 'POST', {
     name: `Stompads Video ${Date.now()}`,
     object_story_spec: {
       page_id: PAGE_ID,
-      video_data: {
-        video_id: videoId,
-        title: headline,
-        message: primaryText,
-        call_to_action: { type: 'LEARN_MORE', value: { link: websiteUrl } },
-      },
+      video_data: videoData,
     },
   })
   return data.id
