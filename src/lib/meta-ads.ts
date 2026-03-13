@@ -125,6 +125,7 @@ export async function createVideoAdCreative(
   primaryText: string,
   description: string,
   websiteUrl: string,
+  brandFallbackImageUrl?: string,
 ): Promise<string> {
   // Step 1: Upload video
   const uploadData = await metaFetch(`/${AD_ACCOUNT_ID}/advideos`, 'POST', {
@@ -139,7 +140,6 @@ export async function createVideoAdCreative(
     await new Promise(r => setTimeout(r, 3000))
     try {
       const videoInfo = await metaFetch(`/${videoId}?fields=thumbnails,picture`, 'GET')
-      // Try thumbnails first (higher quality)
       const thumbUri = videoInfo?.thumbnails?.data?.[0]?.uri || videoInfo?.picture
       if (thumbUri) {
         imageHash = await uploadThumbnailFromUrl(thumbUri)
@@ -150,10 +150,14 @@ export async function createVideoAdCreative(
     }
   }
 
-  // Fallback: use favicon if thumbnail extraction failed
-  if (!imageHash) {
-    console.warn('[META] Could not extract video thumbnail, using favicon fallback')
-    imageHash = await uploadThumbnailFromUrl('https://stompads.com/favicon.png')
+  // Fallback: use brand's OG image or logo
+  if (!imageHash && brandFallbackImageUrl) {
+    console.warn('[META] Could not extract video thumbnail, using brand image fallback')
+    try {
+      imageHash = await uploadThumbnailFromUrl(brandFallbackImageUrl)
+    } catch {
+      console.warn('[META] Brand image fallback also failed')
+    }
   }
 
   // Step 3: Create creative
