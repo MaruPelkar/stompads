@@ -114,7 +114,7 @@ export default function LandingPage() {
       <nav style={{
         position: 'fixed', top: 0, left: 0, right: 0, zIndex: 100,
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '18px 40px', borderBottom: '1px solid rgba(0,0,0,0.06)',
+        padding: '16px clamp(16px, 4vw, 40px)', borderBottom: '1px solid rgba(0,0,0,0.06)',
         background: 'rgba(255,252,248,0.88)', backdropFilter: 'blur(20px)',
         WebkitBackdropFilter: 'blur(20px)',
       }}>
@@ -135,7 +135,7 @@ export default function LandingPage() {
       <section style={{
         height: '100vh', display: 'flex', flexDirection: 'column',
         alignItems: 'center', justifyContent: 'center', textAlign: 'center',
-        position: 'relative', padding: '80px 24px 60px', overflow: 'hidden',
+        position: 'relative', padding: '80px 16px 40px', overflow: 'hidden',
       }}>
 
         {/* Floating Ad Cards */}
@@ -203,9 +203,9 @@ export default function LandingPage() {
 
         {/* URL Input + Launch — clean, no slider */}
         <div style={{
-          marginTop: '36px', display: 'flex', flexDirection: 'column',
-          alignItems: 'center', gap: '16px', position: 'relative', zIndex: 10,
-          width: '100%', maxWidth: '460px',
+          marginTop: '28px', display: 'flex', flexDirection: 'column',
+          alignItems: 'center', gap: '14px', position: 'relative', zIndex: 10,
+          width: '100%', maxWidth: '460px', padding: '0 8px',
         }}>
           <div style={{ width: '100%', position: 'relative' }}>
             <input

@@ -24,7 +24,7 @@ export function UrlForm({ onSubmit, loading }: Props) {
           We handle the rest. Ads go live when you say go.
         </p>
       </div>
-      <form onSubmit={handleSubmit} className="flex gap-3 max-w-xl mx-auto">
+      <form onSubmit={handleSubmit} className="flex gap-3 max-w-xl mx-auto mobile-stack">
         <input
           type="text"
           value={url}
@@ -32,8 +32,9 @@ export function UrlForm({ onSubmit, loading }: Props) {
           placeholder="yourwebsite.com"
           required
           className="input flex-1"
+          style={{ minWidth: 0 }}
         />
-        <button type="submit" disabled={loading} className="btn-primary" style={{ whiteSpace: 'nowrap', fontSize: '16px', padding: '14px 28px' }}>
+        <button type="submit" disabled={loading} className="btn-primary mobile-full" style={{ whiteSpace: 'nowrap', fontSize: '16px', padding: '14px 28px' }}>
           {loading ? 'ON IT...' : 'GO'}
         </button>
       </form>

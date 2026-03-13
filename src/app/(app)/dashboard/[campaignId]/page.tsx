@@ -16,45 +16,55 @@ function badgeClass(status: string) {
 function LiveAdCard({ ad, metrics }: { ad: Ad; metrics?: Metrics }) {
   return (
     <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-      {/* Video — compact */}
-      <div style={{ height: '280px', background: 'var(--input-bg)' }}>
+      {/* Video — correct 9:16 aspect ratio, max height controlled */}
+      <div style={{ display: 'flex', justifyContent: 'center', background: 'var(--input-bg)', padding: '12px' }}>
         {ad.asset_url && (
-          <video src={ad.asset_url} className="w-full h-full object-cover" muted loop autoPlay playsInline />
+          <video
+            src={ad.asset_url}
+            muted loop autoPlay playsInline
+            style={{
+              width: '100%',
+              maxWidth: '200px',
+              aspectRatio: '9 / 16',
+              objectFit: 'cover',
+              borderRadius: 'var(--radius-md)',
+            }}
+          />
         )}
       </div>
 
       {/* Per-ad KPIs */}
-      <div style={{ padding: '16px' }}>
-        <div className="flex justify-between items-center" style={{ marginBottom: '12px' }}>
+      <div style={{ padding: '14px' }}>
+        <div className="flex justify-between items-center" style={{ marginBottom: '10px' }}>
           <span className="label">{ad.type} {ad.aspect_ratio}</span>
           <span className={badgeClass(ad.status)}>{ad.status}</span>
         </div>
 
         {metrics ? (
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
             <div>
               <span className="label">Impressions</span>
-              <p style={{ fontFamily: 'var(--font-display)', fontSize: '20px', color: 'var(--text)', marginTop: '2px' }}>{metrics.impressions.toLocaleString()}</p>
+              <p style={{ fontFamily: 'var(--font-display)', fontSize: '18px', color: 'var(--text)', marginTop: '2px' }}>{metrics.impressions.toLocaleString()}</p>
             </div>
             <div>
               <span className="label">Clicks</span>
-              <p style={{ fontFamily: 'var(--font-display)', fontSize: '20px', color: 'var(--text)', marginTop: '2px' }}>{metrics.clicks.toLocaleString()}</p>
+              <p style={{ fontFamily: 'var(--font-display)', fontSize: '18px', color: 'var(--text)', marginTop: '2px' }}>{metrics.clicks.toLocaleString()}</p>
             </div>
             <div>
               <span className="label">CTR</span>
-              <p style={{ fontFamily: 'var(--font-display)', fontSize: '20px', color: 'var(--orange)', marginTop: '2px' }}>{(metrics.ctr * 100).toFixed(2)}%</p>
+              <p style={{ fontFamily: 'var(--font-display)', fontSize: '18px', color: 'var(--orange)', marginTop: '2px' }}>{(metrics.ctr * 100).toFixed(2)}%</p>
             </div>
             <div>
               <span className="label">CPC</span>
-              <p style={{ fontFamily: 'var(--font-display)', fontSize: '20px', color: 'var(--text)', marginTop: '2px' }}>${Number(metrics.cpc).toFixed(2)}</p>
+              <p style={{ fontFamily: 'var(--font-display)', fontSize: '18px', color: 'var(--text)', marginTop: '2px' }}>${Number(metrics.cpc).toFixed(2)}</p>
             </div>
             <div className="col-span-2">
               <span className="label">Spend</span>
-              <p style={{ fontFamily: 'var(--font-display)', fontSize: '20px', color: 'var(--text)', marginTop: '2px' }}>${Number(metrics.spend).toFixed(2)}</p>
+              <p style={{ fontFamily: 'var(--font-display)', fontSize: '18px', color: 'var(--text)', marginTop: '2px' }}>${Number(metrics.spend).toFixed(2)}</p>
             </div>
           </div>
         ) : (
-          <p className="label" style={{ fontSize: '11px' }}>Metrics sync hourly. Check back soon.</p>
+          <p className="label">Metrics sync hourly. Check back soon.</p>
         )}
       </div>
     </div>
@@ -115,17 +125,17 @@ export default async function CampaignPage({ params }: { params: { campaignId: s
 
       {/* Running campaign — compact summary bar */}
       {isRunning && campaign.daily_budget && (
-        <div className="flex gap-6" style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--text-light)' }}>
+        <div className="flex flex-wrap gap-x-6 gap-y-2" style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--text-light)' }}>
           <span><strong style={{ color: 'var(--text)' }}>${(campaign.daily_budget / 100).toFixed(0)}</strong>/day</span>
           <span><strong style={{ color: 'var(--text)' }}>${totalSpend.toFixed(2)}</strong> spent</span>
           <span><strong style={{ color: 'var(--text)' }}>{totalClicks.toLocaleString()}</strong> clicks</span>
-          <span><strong style={{ color: 'var(--text)' }}>{totalImpressions.toLocaleString()}</strong> impressions</span>
+          <span><strong style={{ color: 'var(--text)' }}>{totalImpressions.toLocaleString()}</strong> impr.</span>
         </div>
       )}
 
       {/* Non-running — bigger metric cards */}
       {!isRunning && campaign.daily_budget && (
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-3 mobile-single-col gap-4">
           <div className="card" style={{ padding: '16px' }}>
             <p className="label">Daily Budget</p>
             <p style={{ fontFamily: 'var(--font-display)', fontSize: '26px', color: 'var(--text)', marginTop: '4px' }}>${(campaign.daily_budget / 100).toFixed(0)}/day</p>

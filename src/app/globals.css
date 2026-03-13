@@ -315,8 +315,47 @@ input[type="range"]::-moz-range-track {
   .floating-ad { max-width: 100px !important; max-height: 140px !important; }
 }
 @media (max-width: 768px) {
-  .floating-ad { max-width: 80px !important; max-height: 110px !important; }
+  .floating-ad { max-width: 70px !important; max-height: 100px !important; }
   .floating-ad.hide-mobile { display: none !important; }
+}
+
+/* ─── MOBILE RESPONSIVE ─── */
+@media (max-width: 768px) {
+  .heading-xl { font-size: 36px; }
+  .heading-lg { font-size: 26px; }
+  .heading-md { font-size: 18px; }
+
+  .card { padding: 16px; }
+
+  .btn-primary {
+    font-size: 16px;
+    padding: 14px 28px;
+    letter-spacing: 1.5px;
+  }
+
+  .btn-secondary {
+    font-size: 11px;
+    padding: 8px 16px;
+  }
+
+  /* Stack horizontal layouts */
+  .mobile-stack {
+    flex-direction: column !important;
+  }
+
+  /* Full width buttons on mobile */
+  .mobile-full {
+    width: 100% !important;
+  }
+
+  /* Grid single column on mobile */
+  .mobile-single-col {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .heading-xl { font-size: 28px; }
 }
 
 /* ─── REDUCED MOTION ─── */
