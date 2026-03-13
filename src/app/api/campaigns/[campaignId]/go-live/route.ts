@@ -44,6 +44,7 @@ export async function POST(
 
   const brandProfile = campaign.brand_profile as unknown as BrandProfile
   const adCopy = campaign.ad_copy as unknown as AdCopy
+  const brandAssets = campaign.brand_assets as unknown as { ogImage?: string; logoUrl?: string; productImages?: string[] } | null
 
   const headline = adCopy?.headline || brandProfile.product_name
   const primaryText = adCopy?.primaryText || brandProfile.key_value_props.slice(0, 2).join('. ')
@@ -82,8 +83,10 @@ export async function POST(
       let creativeId: string
 
       if (ad.type === 'video') {
+        // Use OG image, logo, or first product image as video thumbnail
+        const thumbnailUrl = brandAssets?.ogImage || brandAssets?.logoUrl || brandAssets?.productImages?.[0] || undefined
         creativeId = await createVideoAdCreative(
-          ad.asset_url, headline, primaryText, description, campaign.url
+          ad.asset_url, headline, primaryText, description, campaign.url, thumbnailUrl
         )
       } else {
         // Image ads (not generated for now, but handle gracefully if they exist)

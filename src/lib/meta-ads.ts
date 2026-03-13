@@ -135,6 +135,7 @@ export async function createVideoAdCreative(
   primaryText: string,
   description: string,
   websiteUrl: string,
+  thumbnailImageUrl?: string,
 ): Promise<string> {
   // Step 1: Upload video to Meta
   const uploadData = await metaFetch(`/${AD_ACCOUNT_ID}/advideos`, 'POST', {
@@ -143,10 +144,10 @@ export async function createVideoAdCreative(
   })
   const videoId = uploadData.id
 
-  // Step 2: Upload a placeholder thumbnail image
-  // Create a minimal 1080x1920 orange PNG as thumbnail
-  // Meta will auto-replace with actual video frame, but needs something valid at creation time
-  const placeholderImageHash = await uploadPlaceholderThumbnail()
+  // Step 2: Upload thumbnail image
+  // Use provided thumbnail URL, or fall back to a hosted placeholder
+  const thumbUrl = thumbnailImageUrl || 'https://stompads.com/favicon.png'
+  const imageHash = await uploadThumbnailFromUrl(thumbUrl)
 
   // Step 3: Create the creative
   const data = await metaFetch(`/${AD_ACCOUNT_ID}/adcreatives`, 'POST', {
@@ -155,7 +156,7 @@ export async function createVideoAdCreative(
       page_id: PAGE_ID,
       video_data: {
         video_id: videoId,
-        image_hash: placeholderImageHash,
+        image_hash: imageHash,
         title: headline,
         message: primaryText,
         call_to_action: { type: 'LEARN_MORE', value: { link: websiteUrl } },
@@ -165,23 +166,12 @@ export async function createVideoAdCreative(
   return data.id
 }
 
-// Generate and upload a minimal valid PNG as a video thumbnail placeholder
-async function uploadPlaceholderThumbnail(): Promise<string> {
-  // Minimal 1x1 orange PNG (valid image that Meta will accept)
-  // This gets replaced by the actual video frame once Meta processes the video
-  const PNG_HEADER = Buffer.from([
-    0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, // PNG signature
-    0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44, 0x52, // IHDR chunk
-    0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, // 1x1
-    0x08, 0x02, 0x00, 0x00, 0x00, 0x90, 0x77, 0x53, 0xDE, // 8-bit RGB
-    0x00, 0x00, 0x00, 0x0C, 0x49, 0x44, 0x41, 0x54, // IDAT chunk
-    0x08, 0xD7, 0x63, 0xF8, 0xCF, 0xC0, 0x00, 0x00, // compressed data
-    0x00, 0x02, 0x00, 0x01, 0xE2, 0x21, 0xBC, 0x33, // CRC
-    0x00, 0x00, 0x00, 0x00, 0x49, 0x45, 0x4E, 0x44, // IEND chunk
-    0xAE, 0x42, 0x60, 0x82,
-  ])
+// Upload a real image from URL to use as video thumbnail
+async function uploadThumbnailFromUrl(imageUrl: string): Promise<string> {
+  const res = await fetch(imageUrl)
+  const buffer = Buffer.from(await res.arrayBuffer())
+  const base64 = buffer.toString('base64')
 
-  const base64 = PNG_HEADER.toString('base64')
   const imgData = await metaFetch(`/${AD_ACCOUNT_ID}/adimages`, 'POST', {
     bytes: base64,
   })
