@@ -111,11 +111,9 @@ function OnboardContent() {
 
     const id = createData.campaignId
     setCampaignId(id)
-    pollingRef.current = setInterval(() => pollStatus(id), 3000)
 
-    fetch(`/api/campaigns/${id}/process`, { method: 'POST' }).catch(err => {
-      console.error('Process call failed:', err)
-    })
+    // Processing is triggered server-side by /create — just poll for status
+    pollingRef.current = setInterval(() => pollStatus(id), 3000)
   }
 
   async function handleBudgetSubmit(dailyBudgetCents: number) {
