@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient, createServiceClient } from '@/lib/supabase/server'
 import {
-  createCampaign,
+  createCampaignWithBudget,
   createAdSet,
   createVideoAdCreative,
   createAd,
@@ -9,6 +9,8 @@ import {
   createImageAdCreative,
 } from '@/lib/meta-ads'
 import type { BrandProfile, AdCopy } from '@/types/database'
+
+export const maxDuration = 120
 
 export async function POST(
   request: NextRequest,
@@ -44,19 +46,12 @@ export async function POST(
 
   const brandProfile = campaign.brand_profile as unknown as BrandProfile
   const adCopy = campaign.ad_copy as unknown as AdCopy
-  const brandAssets = campaign.brand_assets as unknown as { ogImage?: string; logoUrl?: string; productImages?: string[] } | null
 
   const headline = adCopy?.headline || brandProfile.product_name
   const primaryText = adCopy?.primaryText || brandProfile.key_value_props.slice(0, 2).join('. ')
   const description = adCopy?.description || 'Learn more'
 
   try {
-    // 1 campaign per Stompads campaign (reuse if exists)
-    let metaCampaignId = campaign.meta_campaign_id
-    if (!metaCampaignId) {
-      metaCampaignId = await createCampaign(`Stompads - ${brandProfile.product_name}`)
-    }
-
     // 10% platform commission — user pays $10, Meta gets $9
     const adSpendCents = Math.round(campaign.daily_budget! * 0.9)
 
@@ -64,15 +59,19 @@ export async function POST(
     const USD_TO_INR = 85
     const budgetInAccountCurrency = adSpendCents * USD_TO_INR
 
-    // 1 ad set per campaign — Advantage+ targeting (Meta optimizes everything)
-    let adSetId = campaign.meta_adset_id
-
-    if (!adSetId) {
-      adSetId = await createAdSet(
-        metaCampaignId,
-        `${brandProfile.product_name} - Advantage+`,
+    // 1 campaign with campaign-level budget control (reuse if exists)
+    let metaCampaignId = campaign.meta_campaign_id
+    if (!metaCampaignId) {
+      metaCampaignId = await createCampaignWithBudget(
+        `Stompads - ${brandProfile.product_name}`,
         budgetInAccountCurrency,
       )
+    }
+
+    // 1 ad set (no budget — controlled at campaign level)
+    let adSetId = campaign.meta_adset_id
+    if (!adSetId) {
+      adSetId = await createAdSet(metaCampaignId, `${brandProfile.product_name} - Ads`)
     }
 
     // Save Meta IDs
@@ -84,15 +83,13 @@ export async function POST(
     // 2 ads in the single ad set
     for (const ad of ads) {
       if (!ad.asset_url) continue
-      // Skip if already has a meta_ad_id (avoid duplicates on retry)
-      if (ad.meta_ad_id) continue
+      if (ad.meta_ad_id) continue // skip already pushed
 
       let creativeId: string
 
       if (ad.type === 'video') {
-        const thumbnailUrl = brandAssets?.ogImage || brandAssets?.logoUrl || brandAssets?.productImages?.[0] || undefined
         creativeId = await createVideoAdCreative(
-          ad.asset_url, headline, primaryText, description, campaign.url, thumbnailUrl
+          ad.asset_url, headline, primaryText, description, campaign.url
         )
       } else {
         const imageHash = await uploadAdImage(ad.asset_url)

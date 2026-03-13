@@ -34,30 +34,28 @@ async function metaFetch(path: string, method: 'GET' | 'POST' = 'POST', body?: R
   return data
 }
 
-// ─── CAMPAIGN ───
+// ─── CAMPAIGN (with campaign-level daily budget) ───
 
-export async function createCampaign(name: string): Promise<string> {
+export async function createCampaignWithBudget(name: string, dailyBudgetCents: number): Promise<string> {
   const data = await metaFetch(`/${AD_ACCOUNT_ID}/campaigns`, 'POST', {
     name,
     objective: 'OUTCOME_TRAFFIC',
     status: 'ACTIVE',
     special_ad_categories: '[]',
-    is_adset_budget_sharing_enabled: 'false',
+    daily_budget: dailyBudgetCents,
   })
   return data.id
 }
 
-// ─── AD SET (single, Advantage+ targeting) ───
+// ─── AD SET (no budget — campaign controls it) ───
 
 export async function createAdSet(
   campaignId: string,
   name: string,
-  dailyBudgetCents: number,
 ): Promise<string> {
   const data = await metaFetch(`/${AD_ACCOUNT_ID}/adsets`, 'POST', {
     name,
     campaign_id: campaignId,
-    daily_budget: dailyBudgetCents,
     billing_event: 'IMPRESSIONS',
     optimization_goal: 'LINK_CLICKS',
     bid_strategy: 'LOWEST_COST_WITHOUT_CAP',
@@ -127,17 +125,38 @@ export async function createVideoAdCreative(
   primaryText: string,
   description: string,
   websiteUrl: string,
-  thumbnailImageUrl?: string,
 ): Promise<string> {
+  // Step 1: Upload video
   const uploadData = await metaFetch(`/${AD_ACCOUNT_ID}/advideos`, 'POST', {
     file_url: videoUrl,
     name: `Stompads Video ${Date.now()}`,
   })
   const videoId = uploadData.id
 
-  const thumbUrl = thumbnailImageUrl || 'https://stompads.com/favicon.png'
-  const imageHash = await uploadThumbnailFromUrl(thumbUrl)
+  // Step 2: Wait for Meta to process video, then get auto-generated thumbnail (first frame)
+  let imageHash: string | null = null
+  for (let attempt = 0; attempt < 8; attempt++) {
+    await new Promise(r => setTimeout(r, 3000))
+    try {
+      const videoInfo = await metaFetch(`/${videoId}?fields=thumbnails,picture`, 'GET')
+      // Try thumbnails first (higher quality)
+      const thumbUri = videoInfo?.thumbnails?.data?.[0]?.uri || videoInfo?.picture
+      if (thumbUri) {
+        imageHash = await uploadThumbnailFromUrl(thumbUri)
+        break
+      }
+    } catch {
+      // Not ready yet
+    }
+  }
 
+  // Fallback: use favicon if thumbnail extraction failed
+  if (!imageHash) {
+    console.warn('[META] Could not extract video thumbnail, using favicon fallback')
+    imageHash = await uploadThumbnailFromUrl('https://stompads.com/favicon.png')
+  }
+
+  // Step 3: Create creative
   const data = await metaFetch(`/${AD_ACCOUNT_ID}/adcreatives`, 'POST', {
     name: `Stompads Video ${Date.now()}`,
     object_story_spec: {
