@@ -106,18 +106,6 @@ export async function createImageAdCreative(
   return data.id
 }
 
-async function uploadThumbnailFromUrl(imageUrl: string): Promise<string> {
-  const res = await fetch(imageUrl)
-  const buffer = Buffer.from(await res.arrayBuffer())
-  const base64 = buffer.toString('base64')
-
-  const imgData = await metaFetch(`/${AD_ACCOUNT_ID}/adimages`, 'POST', {
-    bytes: base64,
-  })
-  const hashKey = Object.keys(imgData.images)[0]
-  return imgData.images[hashKey].hash
-}
-
 export async function createVideoAdCreative(
   videoUrl: string,
   headline: string,
@@ -125,43 +113,20 @@ export async function createVideoAdCreative(
   description: string,
   websiteUrl: string,
 ): Promise<string> {
-  // Step 1: Upload video
+  // Upload video
   const uploadData = await metaFetch(`/${AD_ACCOUNT_ID}/advideos`, 'POST', {
     file_url: videoUrl,
     name: `Stompads Video ${Date.now()}`,
   })
   const videoId = uploadData.id
 
-  // Step 2: Wait for Meta to process video, then get its first frame as thumbnail
-  // Poll for up to 90 seconds (30 attempts x 3s)
-  let imageHash: string | null = null
-  for (let attempt = 0; attempt < 30; attempt++) {
-    await new Promise(r => setTimeout(r, 3000))
-    try {
-      const videoInfo = await metaFetch(`/${videoId}?fields=thumbnails,picture`, 'GET')
-      const thumbUri = videoInfo?.thumbnails?.data?.[0]?.uri || videoInfo?.picture
-      if (thumbUri) {
-        imageHash = await uploadThumbnailFromUrl(thumbUri)
-        break
-      }
-    } catch {
-      // Not ready yet — keep polling
-    }
-  }
-
-  if (!imageHash) {
-    console.error(`[META] Thumbnail extraction failed for video ${videoId} after 90s`)
-    throw new Error(`Video thumbnail not ready after 90 seconds. Please try Go Live again in a minute.`)
-  }
-
-  // Step 3: Create creative — each creative is unique to this campaign's video
+  // Create creative — no image_hash, let Meta auto-generate thumbnail
   const data = await metaFetch(`/${AD_ACCOUNT_ID}/adcreatives`, 'POST', {
     name: `Stompads Video ${Date.now()}`,
     object_story_spec: {
       page_id: PAGE_ID,
       video_data: {
         video_id: videoId,
-        image_hash: imageHash,
         title: headline,
         message: primaryText,
         call_to_action: { type: 'LEARN_MORE', value: { link: websiteUrl } },
