@@ -40,6 +40,7 @@ export async function createCampaign(name: string): Promise<string> {
     objective: 'OUTCOME_TRAFFIC',
     status: 'ACTIVE',
     special_ad_categories: '[]',
+    is_adset_budget_sharing_enabled: 'false',
   })
   return data.id
 }
