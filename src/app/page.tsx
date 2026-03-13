@@ -140,12 +140,12 @@ export default function LandingPage() {
 
         {/* Floating Ad Cards */}
         {[
-          { src: '/samples/ad1.png', badge: 'Instagram', isVideo: false, cls: '', style: { top: '8%', left: '3%', width: 140, height: 180, transform: 'rotate(-6deg)', animation: 'floatIn 1s 0.2s ease-out forwards, drift1 8s ease-in-out 1.2s infinite' } },
-          { src: '/samples/ad4.png', badge: 'TikTok', isVideo: false, cls: '', style: { top: '5%', right: '3%', width: 120, height: 210, transform: 'rotate(4deg)', animation: 'floatIn 1s 0.5s ease-out forwards, drift2 9s ease-in-out 1.5s infinite' } },
-          { src: '/samples/ad5.png', badge: 'Facebook', isVideo: false, cls: '', style: { bottom: '18%', left: '2%', width: 150, height: 150, transform: 'rotate(3deg)', animation: 'floatIn 1s 0.8s ease-out forwards, drift3 7s ease-in-out 1.8s infinite' } },
-          { src: '/samples/ugc-video.mp4', badge: 'Reels', isVideo: true, cls: '', style: { bottom: '10%', right: '3%', width: 130, height: 185, transform: 'rotate(-5deg)', animation: 'floatIn 1s 1.1s ease-out forwards, drift4 10s ease-in-out 2.1s infinite' } },
-          { src: '/samples/ad2.png', badge: 'YouTube', isVideo: false, cls: 'hide-mobile', style: { top: '38%', left: '0%', width: 110, height: 145, transform: 'rotate(2deg)', animation: 'floatIn 1s 0.4s ease-out forwards, drift2 8.5s ease-in-out 1.4s infinite' } },
-          { src: '/samples/ad3.png', badge: 'Stories', isVideo: false, cls: 'hide-mobile', style: { top: '35%', right: '0%', width: 115, height: 155, transform: 'rotate(-3deg)', animation: 'floatIn 1s 0.7s ease-out forwards, drift3 9.5s ease-in-out 1.7s infinite' } },
+          { src: '/samples/ad1.png', badge: 'Instagram', isVideo: false, cls: '', style: { top: '6%', left: '2%', width: 200, height: 260, transform: 'rotate(-6deg)', animation: 'floatIn 1s 0.2s ease-out forwards, drift1 8s ease-in-out 1.2s infinite' } },
+          { src: '/samples/ad4.png', badge: 'TikTok', isVideo: false, cls: '', style: { top: '3%', right: '2%', width: 175, height: 310, transform: 'rotate(4deg)', animation: 'floatIn 1s 0.5s ease-out forwards, drift2 9s ease-in-out 1.5s infinite' } },
+          { src: '/samples/ad5.png', badge: 'Facebook', isVideo: false, cls: '', style: { bottom: '14%', left: '1%', width: 210, height: 210, transform: 'rotate(3deg)', animation: 'floatIn 1s 0.8s ease-out forwards, drift3 7s ease-in-out 1.8s infinite' } },
+          { src: '/samples/ugc-video.mp4', badge: 'Reels', isVideo: true, cls: '', style: { bottom: '8%', right: '2%', width: 185, height: 265, transform: 'rotate(-5deg)', animation: 'floatIn 1s 1.1s ease-out forwards, drift4 10s ease-in-out 2.1s infinite' } },
+          { src: '/samples/ad2.png', badge: 'YouTube', isVideo: false, cls: 'hide-mobile', style: { top: '32%', left: '0%', width: 160, height: 210, transform: 'rotate(2deg)', animation: 'floatIn 1s 0.4s ease-out forwards, drift2 8.5s ease-in-out 1.4s infinite' } },
+          { src: '/samples/ad3.png', badge: 'Stories', isVideo: false, cls: 'hide-mobile', style: { top: '30%', right: '0%', width: 165, height: 220, transform: 'rotate(-3deg)', animation: 'floatIn 1s 0.7s ease-out forwards, drift3 9.5s ease-in-out 1.7s infinite' } },
         ].map((ad, i) => (
           <div key={i} className={`floating-ad ${ad.cls}`} style={{
             position: 'absolute', borderRadius: 'var(--radius-lg)', overflow: 'hidden',
