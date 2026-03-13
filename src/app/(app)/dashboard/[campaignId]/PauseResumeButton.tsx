@@ -4,12 +4,13 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 
 export default function PauseResumeButton({ campaignId, currentStatus }: { campaignId: string; currentStatus: string }) {
+  const [status, setStatus] = useState(currentStatus)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()
 
-  const isLive = currentStatus === 'live'
-  const isPaused = currentStatus === 'paused'
+  const isLive = status === 'live'
+  const isPaused = status === 'paused'
 
   if (!isLive && !isPaused) return null
 
@@ -31,6 +32,9 @@ export default function PauseResumeButton({ campaignId, currentStatus }: { campa
       return
     }
 
+    // Update local status immediately, then refresh server data
+    setStatus(isLive ? 'paused' : 'live')
+    setLoading(false)
     router.refresh()
   }
 
