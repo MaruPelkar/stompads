@@ -39,6 +39,7 @@ export function BudgetForm({ onSubmit, loading }: Props) {
             placeholder="50"
             min={10}
             max={10000}
+            step={10}
             required
             className="input"
             style={{
