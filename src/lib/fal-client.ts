@@ -168,22 +168,25 @@ async function addSubtitles(
   })
 
   try {
+    const config = await getAdConfig()
+    const sub = config.subtitle
+
     const result = await fal.subscribe(FAL_SUBTITLE_MODEL, {
       input: {
         video_url: videoUrl,
-        language: 'en',
-        font_name: 'Montserrat',
-        font_size: 80,
-        font_weight: 'bold',
-        font_color: 'white',
-        highlight_color: 'orange',
-        stroke_width: 3,
-        stroke_color: 'black',
-        background_color: 'none',
-        position: 'bottom',
-        y_offset: 190,
-        words_per_subtitle: 3,
-        enable_animation: true,
+        language: sub.language,
+        font_name: sub.fontName,
+        font_size: sub.fontSize,
+        font_weight: sub.fontWeight,
+        font_color: sub.fontColor,
+        highlight_color: sub.highlightColor,
+        stroke_width: sub.strokeWidth,
+        stroke_color: sub.strokeColor,
+        background_color: sub.backgroundColor,
+        position: sub.position,
+        y_offset: sub.yOffset,
+        words_per_subtitle: sub.wordsPerSubtitle,
+        enable_animation: sub.enableAnimation,
       },
     })
     const data = result.data as FalSubtitleOutput
