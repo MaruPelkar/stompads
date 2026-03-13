@@ -19,7 +19,18 @@ async function metaFetch(path: string, method: 'GET' | 'POST' = 'POST', body?: R
   })
 
   const data = await res.json()
-  if (data.error) throw new Error(`Meta API error: ${data.error.message}`)
+  if (data.error) {
+    const e = data.error
+    const detail = [
+      e.message,
+      e.error_user_title,
+      e.error_user_msg,
+      e.error_subcode ? `subcode=${e.error_subcode}` : '',
+      e.code ? `code=${e.code}` : '',
+    ].filter(Boolean).join(' | ')
+    console.error(`[META_API_ERROR] ${path}:`, JSON.stringify(e))
+    throw new Error(`Meta API error: ${detail}`)
+  }
   return data
 }
 
