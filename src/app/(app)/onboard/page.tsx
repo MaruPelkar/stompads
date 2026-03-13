@@ -18,6 +18,24 @@ const PROGRESS_STEPS = [
   { key: 'subtitles', label: 'Burning in captions' },
 ]
 
+const WAIT_COPY = [
+  "Building something worth waiting for.",
+  "Precision takes time. We don't cut corners.",
+  "Your competitors won't see this coming.",
+  "Every second here saves you hours later.",
+  "We're doing in 60 seconds what agencies charge weeks for.",
+  "This is the last time you'll wait. After this, it's autopilot.",
+  "Your ad is being crafted. Not templated. Crafted.",
+  "Hold tight. What's coming will be worth it.",
+  "Most people give up here. You're not most people.",
+  "The machine is working. Let it work.",
+  "No fluff. No filler. Just results in progress.",
+  "While you wait, your competition is still figuring out Canva.",
+  "60 seconds to launch-ready. That's the Stompads standard.",
+  "We don't do average. That's why this takes a moment.",
+  "Almost there. Your ads are being sharpened.",
+]
+
 export default function OnboardPage() {
   return (
     <Suspense>
@@ -33,6 +51,7 @@ function OnboardContent() {
   const [ads, setAds] = useState<Ad[]>([])
   const [error, setError] = useState<string | null>(null)
   const [progressIndex, setProgressIndex] = useState(0)
+  const [waitCopyIndex, setWaitCopyIndex] = useState(0)
   const [isAdmin, setIsAdmin] = useState(false)
   const searchParams = useSearchParams()
   const router = useRouter()
@@ -50,6 +69,7 @@ function OnboardContent() {
   }, [])
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const progressRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const waitCopyRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   const pollStatus = useCallback(async (id: string) => {
     try {
@@ -73,12 +93,13 @@ function OnboardContent() {
       if (data.status === 'ready' && adCount > 0) {
         if (pollingRef.current) clearInterval(pollingRef.current)
         if (progressRef.current) clearInterval(progressRef.current)
+        if (waitCopyRef.current) clearInterval(waitCopyRef.current)
         setAds(data.ads)
         setStep('preview')
       } else if (data.status === 'draft') {
         if (pollingRef.current) clearInterval(pollingRef.current)
         if (progressRef.current) clearInterval(progressRef.current)
-        // If we have some ads, still show them
+        if (waitCopyRef.current) clearInterval(waitCopyRef.current)
         if (adCount > 0) {
           setAds(data.ads)
           setStep('preview')
@@ -97,6 +118,7 @@ function OnboardContent() {
     return () => {
       if (pollingRef.current) clearInterval(pollingRef.current)
       if (progressRef.current) clearInterval(progressRef.current)
+      if (waitCopyRef.current) clearInterval(waitCopyRef.current)
     }
   }, [])
 
@@ -113,13 +135,19 @@ function OnboardContent() {
     setStep('generating')
     setError(null)
     setProgressIndex(0)
+    setWaitCopyIndex(0)
     setHasProfile(false)
     setAds([])
 
-    // Simulate progress through steps (actual progress comes from polling)
+    // Simulate progress through steps
     progressRef.current = setInterval(() => {
       setProgressIndex(prev => prev < PROGRESS_STEPS.length - 1 ? prev + 1 : prev)
-    }, 12000) // Advance every 12s
+    }, 12000)
+
+    // Rotate motivational copy every 5s
+    waitCopyRef.current = setInterval(() => {
+      setWaitCopyIndex(prev => (prev + 1) % WAIT_COPY.length)
+    }, 5000)
 
     const createRes = await fetch('/api/campaigns/create', {
       method: 'POST',
@@ -213,12 +241,15 @@ function OnboardContent() {
             ))}
           </div>
 
-          {/* Brand profile loaded — videos still generating */}
-          {hasProfile && (
-            <p style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text)', marginTop: '20px', letterSpacing: '0.5px', fontWeight: 600 }}>
-              Understood. Creating your ads now.
-            </p>
-          )}
+          {/* Rotating motivational copy */}
+          <p style={{
+            fontFamily: 'var(--font-body)', fontSize: '14px', color: 'var(--text-light)',
+            marginTop: '24px', maxWidth: '360px', marginLeft: 'auto', marginRight: 'auto',
+            minHeight: '42px', transition: 'opacity 300ms ease',
+            lineHeight: 1.5,
+          }}>
+            {WAIT_COPY[waitCopyIndex]}
+          </p>
         </div>
       )}
 
