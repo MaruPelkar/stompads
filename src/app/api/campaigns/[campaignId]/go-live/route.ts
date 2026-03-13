@@ -64,20 +64,12 @@ export async function POST(
     const USD_TO_INR = 85
     const budgetInAccountCurrency = adSpendCents * USD_TO_INR
 
-    // 1 campaign with campaign-level budget control (reuse if exists)
-    let metaCampaignId = campaign.meta_campaign_id
-    if (!metaCampaignId) {
-      metaCampaignId = await createCampaignWithBudget(
-        `Stompads - ${brandProfile.product_name}`,
-        budgetInAccountCurrency,
-      )
-    }
-
-    // 1 ad set (no budget — controlled at campaign level)
-    let adSetId = campaign.meta_adset_id
-    if (!adSetId) {
-      adSetId = await createAdSet(metaCampaignId, `${brandProfile.product_name} - Ads`)
-    }
+    // Always create fresh campaign + ad set (avoids stale/archived references)
+    const metaCampaignId = await createCampaignWithBudget(
+      `Stompads - ${brandProfile.product_name}`,
+      budgetInAccountCurrency,
+    )
+    const adSetId = await createAdSet(metaCampaignId, `${brandProfile.product_name} - Ads`)
 
     // Save Meta IDs
     await serviceClient
