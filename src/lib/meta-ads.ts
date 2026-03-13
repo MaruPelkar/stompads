@@ -136,22 +136,71 @@ export async function createVideoAdCreative(
   description: string,
   websiteUrl: string,
 ): Promise<string> {
+  // Step 1: Upload video to Meta
   const uploadData = await metaFetch(`/${AD_ACCOUNT_ID}/advideos`, 'POST', {
     file_url: videoUrl,
     name: `Stompads Video ${Date.now()}`,
   })
   const videoId = uploadData.id
 
+  // Step 2: Wait briefly for Meta to process the video, then get its thumbnail
+  // Meta auto-generates thumbnails — query the video for its picture
+  let thumbnailUrl: string | null = null
+  for (let attempt = 0; attempt < 5; attempt++) {
+    await new Promise(r => setTimeout(r, 3000)) // wait 3s between attempts
+    try {
+      const videoData = await metaFetch(`/${videoId}?fields=thumbnails`, 'GET')
+      const thumb = videoData?.thumbnails?.data?.[0]?.uri
+      if (thumb) {
+        thumbnailUrl = thumb
+        break
+      }
+    } catch {
+      // Thumbnail not ready yet, keep trying
+    }
+  }
+
+  // Step 3: If we got a thumbnail, upload it as an ad image to get the hash
+  let imageHash: string | null = null
+  if (thumbnailUrl) {
+    try {
+      // Download thumbnail and upload as ad image
+      const thumbRes = await fetch(thumbnailUrl)
+      const thumbBuffer = await thumbRes.arrayBuffer()
+      const base64 = Buffer.from(thumbBuffer).toString('base64')
+
+      const imgData = await metaFetch(`/${AD_ACCOUNT_ID}/adimages`, 'POST', {
+        bytes: base64,
+      })
+      const hashKey = Object.keys(imgData.images)[0]
+      imageHash = imgData.images[hashKey].hash
+    } catch (err) {
+      console.warn('[META] Failed to upload thumbnail, trying image_url fallback:', err)
+    }
+  }
+
+  // Step 4: Create the creative with the thumbnail
+  const videoData: Record<string, unknown> = {
+    video_id: videoId,
+    title: headline,
+    message: primaryText,
+    call_to_action: { type: 'LEARN_MORE', value: { link: websiteUrl } },
+  }
+
+  if (imageHash) {
+    videoData.image_hash = imageHash
+  } else if (thumbnailUrl) {
+    videoData.image_url = thumbnailUrl
+  } else {
+    // Last resort: use the video URL itself as a placeholder (Meta may reject this)
+    videoData.image_url = videoUrl
+  }
+
   const data = await metaFetch(`/${AD_ACCOUNT_ID}/adcreatives`, 'POST', {
     name: `Stompads Video ${Date.now()}`,
     object_story_spec: {
       page_id: PAGE_ID,
-      video_data: {
-        video_id: videoId,
-        title: headline,
-        message: primaryText,
-        call_to_action: { type: 'LEARN_MORE', value: { link: websiteUrl } },
-      },
+      video_data: videoData,
     },
   })
   return data.id
