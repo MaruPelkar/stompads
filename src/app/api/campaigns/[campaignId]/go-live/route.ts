@@ -102,7 +102,8 @@ export async function POST(
 
     return NextResponse.json({ success: true })
   } catch (err) {
-    console.error('Meta campaign launch error:', err)
-    return NextResponse.json({ error: 'Failed to launch Meta campaign' }, { status: 500 })
+    const msg = err instanceof Error ? err.message : String(err)
+    console.error('Meta campaign launch error:', msg)
+    return NextResponse.json({ error: `Failed to launch Meta campaign: ${msg}` }, { status: 500 })
   }
 }
