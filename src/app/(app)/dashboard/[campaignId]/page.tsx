@@ -4,12 +4,14 @@ import { AdCard } from '@/components/dashboard/AdCard'
 import { MetricsBadge } from '@/components/dashboard/MetricsBadge'
 import type { BrandProfile, Metrics } from '@/types/database'
 import GoLiveButton from './GoLiveButton'
+import PauseResumeButton from './PauseResumeButton'
 import ResumeCheckout from './ResumeCheckout'
 import Link from 'next/link'
 
 function badgeClass(status: string) {
   if (status === 'live') return 'badge badge-live'
   if (status === 'ready') return 'badge badge-ready'
+  if (status === 'paused') return 'badge badge-default'
   return 'badge badge-default'
 }
 
@@ -100,6 +102,9 @@ export default async function CampaignPage({ params }: { params: { campaignId: s
       {campaign.status === 'ready' && (
         <GoLiveButton campaignId={campaign.id} />
       )}
+
+      {/* Live/Paused — toggle */}
+      <PauseResumeButton campaignId={campaign.id} currentStatus={campaign.status} />
 
       {/* Ads */}
       {hasAds && (

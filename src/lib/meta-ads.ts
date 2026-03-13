@@ -34,6 +34,8 @@ async function metaFetch(path: string, method: 'GET' | 'POST' = 'POST', body?: R
   return data
 }
 
+// ─── CAMPAIGN ───
+
 export async function createCampaign(name: string): Promise<string> {
   const data = await metaFetch(`/${AD_ACCOUNT_ID}/campaigns`, 'POST', {
     name,
@@ -45,52 +47,30 @@ export async function createCampaign(name: string): Promise<string> {
   return data.id
 }
 
-interface AdSetConfig {
-  campaignId: string
-  name: string
-  dailyBudgetCents: number
-  placements: 'feed' | 'stories_reels'
-}
+// ─── AD SET (single, Advantage+ targeting) ───
 
-export async function createAdSet(config: AdSetConfig): Promise<string> {
-  const targeting = buildTargeting(config.placements)
-
+export async function createAdSet(
+  campaignId: string,
+  name: string,
+  dailyBudgetCents: number,
+): Promise<string> {
   const data = await metaFetch(`/${AD_ACCOUNT_ID}/adsets`, 'POST', {
-    name: config.name,
-    campaign_id: config.campaignId,
-    daily_budget: config.dailyBudgetCents,
+    name,
+    campaign_id: campaignId,
+    daily_budget: dailyBudgetCents,
     billing_event: 'IMPRESSIONS',
     optimization_goal: 'LINK_CLICKS',
     bid_strategy: 'LOWEST_COST_WITHOUT_CAP',
-    targeting,
+    // Advantage+ targeting — let Meta optimize everything
+    targeting: {
+      geo_locations: { countries: ['US'] },
+    },
     status: 'ACTIVE',
   })
   return data.id
 }
 
-function buildTargeting(placements: 'feed' | 'stories_reels'): Record<string, unknown> {
-  const base = {
-    geo_locations: { countries: ['US'] },
-    age_min: 18,
-    age_max: 65,
-  }
-
-  if (placements === 'feed') {
-    return {
-      ...base,
-      publisher_platforms: ['facebook', 'instagram'],
-      facebook_positions: ['feed'],
-      instagram_positions: ['stream'],
-    }
-  }
-
-  return {
-    ...base,
-    publisher_platforms: ['facebook', 'instagram'],
-    facebook_positions: ['story'],
-    instagram_positions: ['story', 'reels'],
-  }
-}
+// ─── CREATIVES ───
 
 export async function uploadAdImage(imageUrl: string): Promise<string> {
   const imageRes = await fetch(imageUrl)
@@ -129,6 +109,18 @@ export async function createImageAdCreative(
   return data.id
 }
 
+async function uploadThumbnailFromUrl(imageUrl: string): Promise<string> {
+  const res = await fetch(imageUrl)
+  const buffer = Buffer.from(await res.arrayBuffer())
+  const base64 = buffer.toString('base64')
+
+  const imgData = await metaFetch(`/${AD_ACCOUNT_ID}/adimages`, 'POST', {
+    bytes: base64,
+  })
+  const hashKey = Object.keys(imgData.images)[0]
+  return imgData.images[hashKey].hash
+}
+
 export async function createVideoAdCreative(
   videoUrl: string,
   headline: string,
@@ -137,19 +129,15 @@ export async function createVideoAdCreative(
   websiteUrl: string,
   thumbnailImageUrl?: string,
 ): Promise<string> {
-  // Step 1: Upload video to Meta
   const uploadData = await metaFetch(`/${AD_ACCOUNT_ID}/advideos`, 'POST', {
     file_url: videoUrl,
     name: `Stompads Video ${Date.now()}`,
   })
   const videoId = uploadData.id
 
-  // Step 2: Upload thumbnail image
-  // Use provided thumbnail URL, or fall back to a hosted placeholder
   const thumbUrl = thumbnailImageUrl || 'https://stompads.com/favicon.png'
   const imageHash = await uploadThumbnailFromUrl(thumbUrl)
 
-  // Step 3: Create the creative
   const data = await metaFetch(`/${AD_ACCOUNT_ID}/adcreatives`, 'POST', {
     name: `Stompads Video ${Date.now()}`,
     object_story_spec: {
@@ -166,18 +154,7 @@ export async function createVideoAdCreative(
   return data.id
 }
 
-// Upload a real image from URL to use as video thumbnail
-async function uploadThumbnailFromUrl(imageUrl: string): Promise<string> {
-  const res = await fetch(imageUrl)
-  const buffer = Buffer.from(await res.arrayBuffer())
-  const base64 = buffer.toString('base64')
-
-  const imgData = await metaFetch(`/${AD_ACCOUNT_ID}/adimages`, 'POST', {
-    bytes: base64,
-  })
-  const hashKey = Object.keys(imgData.images)[0]
-  return imgData.images[hashKey].hash
-}
+// ─── ADS ───
 
 export async function createAd(adSetId: string, creativeId: string, name: string): Promise<string> {
   const data = await metaFetch(`/${AD_ACCOUNT_ID}/ads`, 'POST', {
@@ -187,4 +164,18 @@ export async function createAd(adSetId: string, creativeId: string, name: string
     status: 'ACTIVE',
   })
   return data.id
+}
+
+// ─── PAUSE / RESUME ───
+
+export async function pauseCampaign(metaCampaignId: string): Promise<void> {
+  await metaFetch(`/${metaCampaignId}`, 'POST', {
+    status: 'PAUSED',
+  })
+}
+
+export async function resumeCampaign(metaCampaignId: string): Promise<void> {
+  await metaFetch(`/${metaCampaignId}`, 'POST', {
+    status: 'ACTIVE',
+  })
 }

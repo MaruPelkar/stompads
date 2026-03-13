@@ -3,10 +3,10 @@ import { createClient, createServiceClient } from '@/lib/supabase/server'
 import {
   createCampaign,
   createAdSet,
-  uploadAdImage,
-  createImageAdCreative,
   createVideoAdCreative,
   createAd,
+  uploadAdImage,
+  createImageAdCreative,
 } from '@/lib/meta-ads'
 import type { BrandProfile, AdCopy } from '@/types/database'
 
@@ -51,52 +51,54 @@ export async function POST(
   const description = adCopy?.description || 'Learn more'
 
   try {
-    // Reuse existing campaign or create new one
+    // 1 campaign per Stompads campaign (reuse if exists)
     let metaCampaignId = campaign.meta_campaign_id
     if (!metaCampaignId) {
       metaCampaignId = await createCampaign(`Stompads - ${brandProfile.product_name}`)
     }
 
-    // Convert USD cents to ad account currency (INR paisa)
-    // Meta ad account is in INR. 1 USD ≈ 85 INR. Budget is in smallest unit (paisa = 1/100 INR)
-    // User pays in USD cents → convert to INR paisa
+    // Convert USD cents to INR paisa
     const USD_TO_INR = 85
-    const budgetInAccountCurrency = campaign.daily_budget! * USD_TO_INR // cents * 85 = paisa
+    const budgetInAccountCurrency = campaign.daily_budget! * USD_TO_INR
 
-    // Video only — all budget goes to Stories & Reels
-    const storiesAdSetId = await createAdSet({
-      campaignId: metaCampaignId,
-      name: `${brandProfile.product_name} - Stories & Reels`,
-      dailyBudgetCents: budgetInAccountCurrency,
-      placements: 'stories_reels',
-    })
+    // 1 ad set per campaign — Advantage+ targeting (Meta optimizes everything)
+    let adSetId = campaign.meta_adset_id
 
+    if (!adSetId) {
+      adSetId = await createAdSet(
+        metaCampaignId,
+        `${brandProfile.product_name} - Advantage+`,
+        budgetInAccountCurrency,
+      )
+    }
+
+    // Save Meta IDs
     await serviceClient
       .from('campaigns')
-      .update({ meta_campaign_id: metaCampaignId, meta_adset_id: storiesAdSetId })
+      .update({ meta_campaign_id: metaCampaignId, meta_adset_id: adSetId })
       .eq('id', params.campaignId)
 
-    // All ads go to stories/reels ad set (video only for now)
+    // 2 ads in the single ad set
     for (const ad of ads) {
       if (!ad.asset_url) continue
+      // Skip if already has a meta_ad_id (avoid duplicates on retry)
+      if (ad.meta_ad_id) continue
 
       let creativeId: string
 
       if (ad.type === 'video') {
-        // Use OG image, logo, or first product image as video thumbnail
         const thumbnailUrl = brandAssets?.ogImage || brandAssets?.logoUrl || brandAssets?.productImages?.[0] || undefined
         creativeId = await createVideoAdCreative(
           ad.asset_url, headline, primaryText, description, campaign.url, thumbnailUrl
         )
       } else {
-        // Image ads (not generated for now, but handle gracefully if they exist)
         const imageHash = await uploadAdImage(ad.asset_url)
         creativeId = await createImageAdCreative(
           imageHash, headline, primaryText, description, campaign.url
         )
       }
 
-      const metaAdId = await createAd(storiesAdSetId, creativeId, `${brandProfile.product_name} - ${ad.type} ${ad.aspect_ratio}`)
+      const metaAdId = await createAd(adSetId, creativeId, `${brandProfile.product_name} - ${ad.type} ${ad.aspect_ratio}`)
 
       await serviceClient
         .from('ads')
