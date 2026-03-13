@@ -1,7 +1,8 @@
 'use client'
 
 import { Suspense, useState, useEffect, useRef, useCallback } from 'react'
-import { useSearchParams } from 'next/navigation'
+import { useSearchParams, useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
 import { UrlForm } from '@/components/onboard/UrlForm'
 import { AdPreview } from '@/components/onboard/AdPreview'
 import { BudgetForm } from '@/components/onboard/BudgetForm'
@@ -33,8 +34,21 @@ function OnboardContent() {
   const [ads, setAds] = useState<Ad[]>([])
   const [error, setError] = useState<string | null>(null)
   const [progressIndex, setProgressIndex] = useState(0)
+  const [isAdmin, setIsAdmin] = useState(false)
   const searchParams = useSearchParams()
+  const router = useRouter()
   const autoStarted = useRef(false)
+
+  // Check admin status (server enforces this — client check is just for UI)
+  useEffect(() => {
+    const supabase = createClient()
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      // Quick admin check — the skip-payment API does the real auth server-side
+      if (user?.email && (user.email === 'nakul@vaaya.ai' || user.email.endsWith('@stompads.com'))) {
+        setIsAdmin(true)
+      }
+    })
+  }, [])
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const progressRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
@@ -152,6 +166,21 @@ function OnboardContent() {
     window.location.href = data.checkoutUrl
   }
 
+  async function handleSkipPayment() {
+    if (!campaignId) return
+    const res = await fetch(`/api/campaigns/${campaignId}/skip-payment`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ dailyBudgetCents: 1000 }),
+    })
+    if (res.ok) {
+      router.push(`/dashboard/${campaignId}`)
+    } else {
+      const data = await res.json()
+      setError(data.error || 'Skip failed')
+    }
+  }
+
   return (
     <div className="space-y-8">
       {step === 'url' && (
@@ -201,6 +230,12 @@ function OnboardContent() {
         <>
           <AdPreview ads={ads} />
           <BudgetForm onSubmit={handleBudgetSubmit} loading={false} />
+          {isAdmin && (
+            <button onClick={handleSkipPayment} className="btn-ghost w-full"
+              style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '-8px' }}>
+              SKIP PAYMENT (ADMIN TEST)
+            </button>
+          )}
         </>
       )}
 
