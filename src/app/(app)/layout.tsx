@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
+import { LogoutButton } from '@/components/LogoutButton'
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient()
@@ -27,6 +28,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
           <Link href="/dashboard" className="nav-link">Dashboard</Link>
           <Link href="/onboard" className="btn-secondary" style={{ fontSize: '11px', padding: '8px 16px' }}>+ New</Link>
+          <LogoutButton />
         </div>
       </nav>
       <main style={{ maxWidth: '960px', margin: '0 auto', padding: '36px 24px' }}>
