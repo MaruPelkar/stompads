@@ -10,21 +10,26 @@ export function AdPreview({ ads }: Props) {
   const videoAds = ads.filter(a => a.type === 'video')
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <h3 className="heading-md">ADS <span style={{ color: 'var(--orange)' }}>READY</span></h3>
       <p className="label" style={{ fontSize: '11px' }}>
         {videoAds.length} video ad{videoAds.length !== 1 ? 's' : ''} — Instagram Stories & Reels
       </p>
-      <div className="grid grid-cols-2 gap-6">
+      <div className="flex gap-4">
         {videoAds.map((ad, i) => (
-          <div key={ad.id} className="space-y-2">
-            <span className="label">Video {i + 1} — Stories & Reels</span>
+          <div key={ad.id} style={{ flex: '0 0 auto', width: '140px' }}>
+            <span className="label" style={{ fontSize: '9px', display: 'block', marginBottom: '6px' }}>Video {i + 1}</span>
             {ad.asset_url && (
               <video
                 src={ad.asset_url}
                 controls
-                className="w-full"
-                style={{ borderRadius: 'var(--radius-md)', border: '1px solid var(--card-border)', aspectRatio: '9/16', objectFit: 'cover' }}
+                style={{
+                  width: '140px', height: '248px',
+                  borderRadius: 'var(--radius-md)',
+                  border: '1px solid var(--card-border)',
+                  objectFit: 'cover',
+                  background: 'var(--input-bg)',
+                }}
               />
             )}
           </div>

@@ -4,6 +4,8 @@ import { AdCard } from '@/components/dashboard/AdCard'
 import { MetricsBadge } from '@/components/dashboard/MetricsBadge'
 import type { BrandProfile, Metrics } from '@/types/database'
 import GoLiveButton from './GoLiveButton'
+import ResumeCheckout from './ResumeCheckout'
+import Link from 'next/link'
 
 function badgeClass(status: string) {
   if (status === 'live') return 'badge badge-live'
@@ -48,33 +50,68 @@ export default async function CampaignPage({ params }: { params: { campaignId: s
   const brandProfile = campaign.brand_profile as unknown as BrandProfile
   const totalSpend = Array.from(latestMetrics.values()).reduce((s, m) => s + Number(m?.spend || 0), 0)
   const totalClicks = Array.from(latestMetrics.values()).reduce((s, m) => s + (m?.clicks || 0), 0)
+  const hasAds = ads && ads.length > 0
 
   return (
     <div className="space-y-8">
       <div>
         <h1 className="heading-lg">{brandProfile?.product_name || campaign.url}</h1>
         <p style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: 'var(--text-muted)', marginTop: '6px' }}>{campaign.url}</p>
-        <span className={`${badgeClass(campaign.status)}`} style={{ marginTop: '10px' }}>{campaign.status}</span>
+        <span className={badgeClass(campaign.status)} style={{ marginTop: '10px' }}>{campaign.status}</span>
       </div>
 
-      <div className="grid grid-cols-3 gap-4">
-        <MetricsBadge label="Daily Budget" value={`$${((campaign.daily_budget || 0) / 100).toFixed(0)}/day`} />
-        <MetricsBadge label="Total Spend" value={`$${totalSpend.toFixed(2)}`} />
-        <MetricsBadge label="Total Clicks" value={totalClicks.toLocaleString()} />
-      </div>
+      {/* Stuck in generating — offer to retry */}
+      {campaign.status === 'generating' && (
+        <div className="card" style={{ textAlign: 'center', padding: '32px' }}>
+          <div className="spinner mb-4" style={{ margin: '0 auto 16px' }} />
+          <p style={{ fontFamily: 'var(--font-mono)', fontSize: '13px', color: 'var(--text)' }}>Still processing.</p>
+          <p style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px' }}>If stuck, try again.</p>
+          <Link href={`/onboard?url=${encodeURIComponent(campaign.url)}`} className="btn-secondary" style={{ marginTop: '16px' }}>
+            Retry
+          </Link>
+        </div>
+      )}
 
+      {/* Draft (failed) — offer to retry */}
+      {campaign.status === 'draft' && (
+        <div className="card" style={{ textAlign: 'center', padding: '32px' }}>
+          <p style={{ fontFamily: 'var(--font-mono)', fontSize: '13px', color: 'var(--text)' }}>This campaign failed to generate.</p>
+          <Link href={`/onboard?url=${encodeURIComponent(campaign.url)}`} className="btn-primary" style={{ marginTop: '16px' }}>
+            Try Again
+          </Link>
+        </div>
+      )}
+
+      {/* Payment pending — resume checkout */}
+      {campaign.status === 'payment_pending' && hasAds && (
+        <ResumeCheckout campaignId={campaign.id} />
+      )}
+
+      {/* Metrics (only show if budget is set) */}
+      {campaign.daily_budget && (
+        <div className="grid grid-cols-3 gap-4">
+          <MetricsBadge label="Daily Budget" value={`$${(campaign.daily_budget / 100).toFixed(0)}/day`} />
+          <MetricsBadge label="Total Spend" value={`$${totalSpend.toFixed(2)}`} />
+          <MetricsBadge label="Total Clicks" value={totalClicks.toLocaleString()} />
+        </div>
+      )}
+
+      {/* Ready — go live */}
       {campaign.status === 'ready' && (
         <GoLiveButton campaignId={campaign.id} />
       )}
 
-      <div>
-        <h2 className="heading-md" style={{ marginBottom: '16px' }}>YOUR ADS</h2>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          {(ads || []).map(ad => (
-            <AdCard key={ad.id} ad={ad} metrics={latestMetrics.get(ad.id) ?? undefined} />
-          ))}
+      {/* Ads */}
+      {hasAds && (
+        <div>
+          <h2 className="heading-md" style={{ marginBottom: '16px' }}>YOUR ADS</h2>
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            {ads.map(ad => (
+              <AdCard key={ad.id} ad={ad} metrics={latestMetrics.get(ad.id) ?? undefined} />
+            ))}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   )
 }
