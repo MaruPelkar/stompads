@@ -34,15 +34,20 @@ export async function POST(
     return NextResponse.json({ error: 'Campaign is not ready to go live' }, { status: 400 })
   }
 
-  const { data: ads } = await serviceClient
+  // Get only the latest ready ad (1 campaign = 1 ad)
+  const { data: allAds } = await serviceClient
     .from('ads')
     .select()
     .eq('campaign_id', params.campaignId)
     .eq('status', 'ready')
+    .is('meta_ad_id', null)
+    .order('created_at', { ascending: false })
+    .limit(1)
 
-  if (!ads || ads.length === 0) {
+  if (!allAds || allAds.length === 0) {
     return NextResponse.json({ error: 'No ready ads found' }, { status: 400 })
   }
+  const ads = allAds
 
   const brandProfile = campaign.brand_profile as unknown as BrandProfile
   const adCopy = campaign.ad_copy as unknown as AdCopy

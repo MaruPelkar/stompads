@@ -133,9 +133,9 @@ export async function createVideoAdCreative(
   const videoId = uploadData.id
 
   // Step 2: Wait for Meta to process video, then get its first frame as thumbnail
-  // ONLY use the video's own thumbnail — never use external/brand images
+  // Poll for up to 90 seconds (30 attempts x 3s)
   let imageHash: string | null = null
-  for (let attempt = 0; attempt < 12; attempt++) {
+  for (let attempt = 0; attempt < 30; attempt++) {
     await new Promise(r => setTimeout(r, 3000))
     try {
       const videoInfo = await metaFetch(`/${videoId}?fields=thumbnails,picture`, 'GET')
@@ -150,7 +150,8 @@ export async function createVideoAdCreative(
   }
 
   if (!imageHash) {
-    throw new Error(`Could not extract thumbnail from video ${videoId} after 36 seconds. Video may still be processing on Meta.`)
+    console.error(`[META] Thumbnail extraction failed for video ${videoId} after 90s`)
+    throw new Error(`Video thumbnail not ready after 90 seconds. Please try Go Live again in a minute.`)
   }
 
   // Step 3: Create creative — each creative is unique to this campaign's video
