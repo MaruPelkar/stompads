@@ -56,11 +56,17 @@ export async function POST(
       metaCampaignId = await createCampaign(`Stompads - ${brandProfile.product_name}`)
     }
 
+    // Convert USD cents to ad account currency (INR paisa)
+    // Meta ad account is in INR. 1 USD ≈ 85 INR. Budget is in smallest unit (paisa = 1/100 INR)
+    // User pays in USD cents → convert to INR paisa
+    const USD_TO_INR = 85
+    const budgetInAccountCurrency = campaign.daily_budget! * USD_TO_INR // cents * 85 = paisa
+
     // Video only — all budget goes to Stories & Reels
     const storiesAdSetId = await createAdSet({
       campaignId: metaCampaignId,
       name: `${brandProfile.product_name} - Stories & Reels`,
-      dailyBudgetCents: campaign.daily_budget!,
+      dailyBudgetCents: budgetInAccountCurrency,
       placements: 'stories_reels',
     })
 
