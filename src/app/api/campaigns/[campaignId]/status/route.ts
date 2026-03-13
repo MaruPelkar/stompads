@@ -18,15 +18,11 @@ export async function GET(
 
   if (!campaign) return NextResponse.json({ error: 'Campaign not found' }, { status: 404 })
 
-  // If ready or draft (failed), also fetch ads
-  let ads = null
-  if (campaign.status === 'ready' || campaign.status === 'draft') {
-    const { data } = await supabase
-      .from('ads')
-      .select()
-      .eq('campaign_id', params.campaignId)
-    ads = data
-  }
+  // Always fetch ads — sequential generation saves each immediately, so we can show partial progress
+  const { data: ads } = await supabase
+    .from('ads')
+    .select()
+    .eq('campaign_id', params.campaignId)
 
   return NextResponse.json({
     status: campaign.status,

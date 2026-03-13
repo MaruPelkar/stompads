@@ -45,25 +45,21 @@ export async function generateCampaignAds(
     buildVideoPrompt(script, setting, brandProfile)
   )
 
-  // Generate both videos in parallel
-  const results = await Promise.allSettled([
-    generateVideoAd(videoPrompts[0], trace.id),
-    generateVideoAd(videoPrompts[1], trace.id),
-  ])
-
-  const adsToInsert = []
+  // Generate videos sequentially — save each to DB immediately so progress is visible
+  // and partial results survive if the function times out
+  let adsGenerated = 0
   const errors: string[] = []
 
-  for (let i = 0; i < results.length; i++) {
-    const result = results[i]
+  for (let i = 0; i < videoPrompts.length; i++) {
+    try {
+      const result = await generateVideoAd(videoPrompts[i], trace.id)
 
-    if (result.status === 'fulfilled') {
-      adsToInsert.push({
+      await supabase.from('ads').insert({
         campaign_id: campaignId,
         type: 'video' as const,
         is_preview: true,
-        asset_url: result.value.url,
-        fal_request_id: result.value.requestId,
+        asset_url: result.url,
+        fal_request_id: result.requestId,
         status: 'ready' as const,
         prompt_used: videoPrompts[i],
         aspect_ratio: '9:16',
@@ -71,18 +67,15 @@ export async function generateCampaignAds(
         meta_ad_id: null,
         meta_creative_id: null,
       })
-    } else {
-      const msg = result.reason instanceof Error ? result.reason.message : String(result.reason)
-      console.error(`[AD_GEN_PARTIAL_FAIL] video ${i + 1}: ${msg}`)
+      adsGenerated++
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err)
+      console.error(`[AD_GEN_FAIL] video ${i + 1}: ${msg}`)
       errors.push(`video ${i + 1}: ${msg}`)
     }
   }
 
-  if (adsToInsert.length > 0) {
-    await supabase.from('ads').insert(adsToInsert)
-  }
-
-  if (adsToInsert.length === 0) {
+  if (adsGenerated === 0) {
     trace.update({ output: { adsGenerated: 0, errors } })
     await langfuse.flushAsync()
     throw new Error(`All video generations failed: ${errors.join('; ')}`)
@@ -93,6 +86,6 @@ export async function generateCampaignAds(
     .update({ status: 'ready' })
     .eq('id', campaignId)
 
-  trace.update({ output: { adsGenerated: adsToInsert.length, failed: errors.length, errors } })
+  trace.update({ output: { adsGenerated, failed: errors.length, errors } })
   await langfuse.flushAsync()
 }

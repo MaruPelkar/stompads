@@ -45,12 +45,22 @@ function OnboardContent() {
 
       const data = await res.json()
 
+      // Update progress based on actual state
       if (data.brandProfile && !hasProfile) {
         setHasProfile(true)
-        setProgressIndex(3) // Jump to "Generating video 1"
+        setProgressIndex(3) // Jump to "Producing video 1"
       }
 
-      if (data.status === 'ready' && data.ads?.length > 0) {
+      // Check if ads are appearing (sequential generation saves each immediately)
+      const adCount = data.ads?.length || 0
+      if (adCount >= 1 && progressIndex < 4) {
+        setProgressIndex(4) // "Producing video 2"
+      }
+      if (adCount >= 2 && progressIndex < 5) {
+        setProgressIndex(5) // "Burning in captions"
+      }
+
+      if (data.status === 'ready' && adCount > 0) {
         if (pollingRef.current) clearInterval(pollingRef.current)
         if (progressRef.current) clearInterval(progressRef.current)
         setAds(data.ads)
@@ -58,14 +68,20 @@ function OnboardContent() {
       } else if (data.status === 'draft') {
         if (pollingRef.current) clearInterval(pollingRef.current)
         if (progressRef.current) clearInterval(progressRef.current)
-        setError('Campaign generation failed. Please try again.')
-        setStep('url')
+        // If we have some ads, still show them
+        if (adCount > 0) {
+          setAds(data.ads)
+          setStep('preview')
+        } else {
+          setError('Campaign generation failed. Please try again.')
+          setStep('url')
+        }
       }
     } catch {
       // Keep polling
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hasProfile])
+  }, [hasProfile, progressIndex])
 
   useEffect(() => {
     return () => {
