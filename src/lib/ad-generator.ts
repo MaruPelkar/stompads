@@ -23,8 +23,8 @@ REQUIREMENTS:
 }
 
 /**
- * Generate 2 UGC video ads for Instagram Stories and Reels.
- * No image ads — video only for now.
+ * Generate 1 UGC video ad for Instagram Stories and Reels.
+ * 1 campaign → 1 ad set → 1 ad
  */
 export async function generateCampaignAds(
   campaignId: string,
@@ -37,57 +37,40 @@ export async function generateCampaignAds(
     metadata: { campaignId, product: brandProfile.product_name },
   })
 
-  // Generate 2 different video scripts with different settings/hooks
+  // Generate 1 video script (takes first from the pair)
   const videoScripts = await generateVideoScripts(brandProfile)
+  const { script, setting } = videoScripts[0]
+  const videoPrompt = buildVideoPrompt(script, setting, brandProfile)
 
-  // Build prompts for each video
-  const videoPrompts = videoScripts.map(({ script, setting }) =>
-    buildVideoPrompt(script, setting, brandProfile)
-  )
+  try {
+    const result = await generateVideoAd(videoPrompt, trace.id)
 
-  // Generate videos sequentially — save each to DB immediately
-  // Mark campaign as 'ready' after EACH successful ad so partial results are usable
-  let adsGenerated = 0
-  const errors: string[] = []
+    await supabase.from('ads').insert({
+      campaign_id: campaignId,
+      type: 'video' as const,
+      is_preview: true,
+      asset_url: result.url,
+      fal_request_id: result.requestId,
+      status: 'ready' as const,
+      prompt_used: videoPrompt,
+      aspect_ratio: '9:16',
+      placement: 'stories_reels',
+      meta_ad_id: null,
+      meta_creative_id: null,
+    })
 
-  for (let i = 0; i < videoPrompts.length; i++) {
-    try {
-      const result = await generateVideoAd(videoPrompts[i], trace.id)
+    await supabase
+      .from('campaigns')
+      .update({ status: 'ready' })
+      .eq('id', campaignId)
 
-      await supabase.from('ads').insert({
-        campaign_id: campaignId,
-        type: 'video' as const,
-        is_preview: true,
-        asset_url: result.url,
-        fal_request_id: result.requestId,
-        status: 'ready' as const,
-        prompt_used: videoPrompts[i],
-        aspect_ratio: '9:16',
-        placement: 'stories_reels',
-        meta_ad_id: null,
-        meta_creative_id: null,
-      })
-      adsGenerated++
-
-      // Mark ready after each successful ad — if function times out on the next one,
-      // the campaign is still usable with the ads generated so far
-      await supabase
-        .from('campaigns')
-        .update({ status: 'ready' })
-        .eq('id', campaignId)
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : String(err)
-      console.error(`[AD_GEN_FAIL] video ${i + 1}: ${msg}`)
-      errors.push(`video ${i + 1}: ${msg}`)
-    }
-  }
-
-  if (adsGenerated === 0) {
-    trace.update({ output: { adsGenerated: 0, errors } })
+    trace.update({ output: { adsGenerated: 1 } })
     await langfuse.flushAsync()
-    throw new Error(`All video generations failed: ${errors.join('; ')}`)
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err)
+    console.error(`[AD_GEN_FAIL]: ${msg}`)
+    trace.update({ output: { adsGenerated: 0, error: msg } })
+    await langfuse.flushAsync()
+    throw new Error(`Video generation failed: ${msg}`)
   }
-
-  trace.update({ output: { adsGenerated, failed: errors.length, errors } })
-  await langfuse.flushAsync()
 }

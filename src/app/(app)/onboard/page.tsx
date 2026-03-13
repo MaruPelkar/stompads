@@ -13,9 +13,8 @@ type Step = 'url' | 'generating' | 'preview' | 'checkout'
 const PROGRESS_STEPS = [
   { key: 'scrape', label: 'Scanning your website' },
   { key: 'profile', label: 'Locking in your brand' },
-  { key: 'scripts', label: 'Writing ad scripts' },
-  { key: 'video1', label: 'Producing video 1' },
-  { key: 'video2', label: 'Producing video 2' },
+  { key: 'scripts', label: 'Writing ad script' },
+  { key: 'video', label: 'Producing your video ad' },
   { key: 'subtitles', label: 'Burning in captions' },
 ]
 
@@ -62,16 +61,13 @@ function OnboardContent() {
       // Update progress based on actual state
       if (data.brandProfile && !hasProfile) {
         setHasProfile(true)
-        setProgressIndex(3) // Jump to "Producing video 1"
+        setProgressIndex(3) // Jump to "Producing your video ad"
       }
 
-      // Check if ads are appearing (sequential generation saves each immediately)
+      // Check if ad appeared
       const adCount = data.ads?.length || 0
       if (adCount >= 1 && progressIndex < 4) {
-        setProgressIndex(4) // "Producing video 2"
-      }
-      if (adCount >= 2 && progressIndex < 5) {
-        setProgressIndex(5) // "Burning in captions"
+        setProgressIndex(4) // "Burning in captions"
       }
 
       if (data.status === 'ready' && adCount > 0) {
