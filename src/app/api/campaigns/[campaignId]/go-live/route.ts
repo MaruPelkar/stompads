@@ -57,9 +57,12 @@ export async function POST(
       metaCampaignId = await createCampaign(`Stompads - ${brandProfile.product_name}`)
     }
 
+    // 10% platform commission — user pays $10, Meta gets $9
+    const adSpendCents = Math.round(campaign.daily_budget! * 0.9)
+
     // Convert USD cents to INR paisa
     const USD_TO_INR = 85
-    const budgetInAccountCurrency = campaign.daily_budget! * USD_TO_INR
+    const budgetInAccountCurrency = adSpendCents * USD_TO_INR
 
     // 1 ad set per campaign — Advantage+ targeting (Meta optimizes everything)
     let adSetId = campaign.meta_adset_id
