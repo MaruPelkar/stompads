@@ -121,48 +121,39 @@ export async function createVideoAdCreative(
   })
   const videoId = uploadData.id
 
-  // Step 2: Wait for video to finish processing on Meta
-  // Poll video status until it has a 'picture' field (meaning processing is done)
-  let pictureUrl: string | null = null
+  // Step 2: Wait for video to be FULLY processed on Meta
+  // Poll until status.video_status === 'ready'
+  let videoReady = false
   for (let attempt = 0; attempt < 40; attempt++) {
-    await new Promise(r => setTimeout(r, 3000)) // 3s between attempts, up to 120s total
+    await new Promise(r => setTimeout(r, 3000)) // 3s × 40 = up to 120s
     try {
-      const videoInfo = await metaFetch(`/${videoId}?fields=status,picture`, 'GET')
-      if (videoInfo?.picture) {
-        pictureUrl = videoInfo.picture
+      const videoInfo = await metaFetch(`/${videoId}?fields=status`, 'GET')
+      const videoStatus = videoInfo?.status?.video_status
+      console.log(`[META] Video ${videoId} status: ${videoStatus} (attempt ${attempt + 1})`)
+      if (videoStatus === 'ready') {
+        videoReady = true
         break
-      }
-      // If status is 'ready', picture should be available
-      if (videoInfo?.status?.video_status === 'ready' || videoInfo?.status?.processing_phase === 'complete') {
-        pictureUrl = videoInfo.picture || null
-        if (pictureUrl) break
       }
     } catch {
       // Keep trying
     }
   }
 
-  // Step 3: Create creative with image_url (Meta's own picture URL)
-  const videoData: Record<string, unknown> = {
-    video_id: videoId,
-    title: headline,
-    message: primaryText,
-    call_to_action: { type: 'LEARN_MORE', value: { link: websiteUrl } },
+  if (!videoReady) {
+    console.warn(`[META] Video ${videoId} not ready after 120s — creating creative anyway`)
   }
 
-  if (pictureUrl) {
-    videoData.image_url = pictureUrl
-  } else {
-    // Last resort: use the original video URL's first frame
-    // Meta sometimes accepts the source video URL as image_url
-    videoData.image_url = videoUrl
-  }
-
+  // Step 3: Create creative — NO thumbnail fields, let Meta auto-assign from the processed video
   const data = await metaFetch(`/${AD_ACCOUNT_ID}/adcreatives`, 'POST', {
     name: `Stompads Video ${Date.now()}`,
     object_story_spec: {
       page_id: PAGE_ID,
-      video_data: videoData,
+      video_data: {
+        video_id: videoId,
+        title: headline,
+        message: primaryText,
+        call_to_action: { type: 'LEARN_MORE', value: { link: websiteUrl } },
+      },
     },
   })
   return data.id
