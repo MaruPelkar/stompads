@@ -69,13 +69,36 @@ function OnboardContent() {
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const progressRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const waitCopyRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const processTriggered = useRef(false)
+  const pollCount = useRef(0)
+
+  // Trigger /process — retry once if the first attempt fails
+  function triggerProcess(id: string) {
+    processTriggered.current = true
+    pollCount.current = 0
+
+    fetch(`/api/campaigns/${id}/process`, { method: 'POST' })
+      .catch(() => {
+        console.warn('[PROCESS] First attempt failed')
+        processTriggered.current = false
+      })
+  }
 
   const pollStatus = useCallback(async (id: string) => {
+    pollCount.current++
+
     try {
       const res = await fetch(`/api/campaigns/${id}/status`)
       if (!res.ok) return
 
       const data = await res.json()
+
+      // Auto-retry: if stuck at generating with no ads for 90s, re-trigger process
+      const adCount = data.ads?.length || 0
+      if (data.status === 'generating' && adCount === 0 && pollCount.current > 30 && !processTriggered.current) {
+        console.warn('[POLL] Stuck at generating — re-triggering /process')
+        triggerProcess(id)
+      }
 
       // Update progress based on actual state
       if (data.brandProfile && !hasProfile) {
@@ -84,7 +107,6 @@ function OnboardContent() {
       }
 
       // Check if ad appeared
-      const adCount = data.ads?.length || 0
       if (adCount >= 1 && progressIndex < 4) {
         setProgressIndex(4) // "Burning in captions"
       }
@@ -165,8 +187,11 @@ function OnboardContent() {
     const id = createData.campaignId
     setCampaignId(id)
 
-    // Processing is triggered server-side by /create — just poll for status
+    // Start polling for status
     pollingRef.current = setInterval(() => pollStatus(id), 3000)
+
+    // Trigger processing — don't await, polling handles the result
+    triggerProcess(id)
   }
 
   async function handleBudgetSubmit(dailyBudgetCents: number) {
