@@ -115,6 +115,29 @@ export async function POST(
     await generateCampaignAds(params.campaignId, brandProfile)
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Ad generation failed'
+
+    // Check if this is a subtitle failure (ad exists but subtitles failed)
+    // In that case, don't reset to draft — the ad's raw video is preserved
+    const { data: existingAds } = await adminClient
+      .from('ads')
+      .select()
+      .eq('campaign_id', params.campaignId)
+
+    const hasSubtitleFailure = existingAds?.some(a => a.pipeline_step === 'subtitle_failed')
+
+    if (hasSubtitleFailure) {
+      trace.update({ output: { campaignId: params.campaignId, subtitleFailed: true } })
+      await langfuse.flushAsync()
+      return NextResponse.json({
+        status: 'subtitle_failed',
+        error: msg,
+        brandProfile,
+        adCopy,
+        brandAssets: storedAssets,
+        ads: existingAds || [],
+      })
+    }
+
     await fail('AD_GENERATION_FAILED', msg)
     return NextResponse.json({ error: `Ad generation failed: ${msg}`, code: 'AD_GENERATION_FAILED' }, { status: 500 })
   }

@@ -4,6 +4,7 @@ import type { BrandProfile, Metrics, Ad } from '@/types/database'
 import GoLiveButton from './GoLiveButton'
 import PauseResumeButton from './PauseResumeButton'
 import ResumeCheckout from './ResumeCheckout'
+import RetrySubtitlesButton from './RetrySubtitlesButton'
 import Link from 'next/link'
 
 function badgeClass(status: string) {
@@ -176,6 +177,21 @@ export default async function CampaignPage({ params }: { params: { campaignId: s
       {/* Payment pending */}
       {campaign.status === 'payment_pending' && hasAds && (
         <ResumeCheckout campaignId={campaign.id} />
+      )}
+
+      {/* Subtitle failed — show retry */}
+      {ads?.some(a => a.pipeline_step === 'subtitle_failed') && (
+        <div className="card" style={{ textAlign: 'center', padding: '24px' }}>
+          <p style={{ fontFamily: 'var(--font-mono)', fontSize: '13px', color: 'var(--red)', fontWeight: 600 }}>
+            CAPTION BURNING FAILED
+          </p>
+          <p style={{ fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--text-muted)', marginTop: '6px' }}>
+            Your video was generated successfully but captions could not be added. Retry below.
+          </p>
+          {ads.filter(a => a.pipeline_step === 'subtitle_failed').map(ad => (
+            <RetrySubtitlesButton key={ad.id} campaignId={params.campaignId} adId={ad.id} />
+          ))}
+        </div>
       )}
 
       {/* Ready — go live */}

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient, createServiceClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 import {
   createCampaignWithBudget,
   createAdSet,
@@ -20,9 +20,9 @@ export async function POST(
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const serviceClient = await createServiceClient()
+  const db = createAdminClient()
 
-  const { data: campaign } = await serviceClient
+  const { data: campaign } = await db
     .from('campaigns')
     .select()
     .eq('id', params.campaignId)
@@ -35,19 +35,17 @@ export async function POST(
   }
 
   // Get only the latest ready ad (1 campaign = 1 ad)
-  const { data: allAds } = await serviceClient
+  const { data: allAds } = await db
     .from('ads')
     .select()
     .eq('campaign_id', params.campaignId)
     .eq('status', 'ready')
-    .is('meta_ad_id', null)
     .order('created_at', { ascending: false })
     .limit(1)
 
   if (!allAds || allAds.length === 0) {
     return NextResponse.json({ error: 'No ready ads found' }, { status: 400 })
   }
-  const ads = allAds
 
   const brandProfile = campaign.brand_profile as unknown as BrandProfile
   const adCopy = campaign.ad_copy as unknown as AdCopy
@@ -64,23 +62,31 @@ export async function POST(
     const USD_TO_INR = 85
     const budgetInAccountCurrency = adSpendCents * USD_TO_INR
 
-    // Always create fresh campaign + ad set (avoids stale/archived references)
-    const metaCampaignId = await createCampaignWithBudget(
-      `Stompads - ${brandProfile.product_name}`,
-      budgetInAccountCurrency,
-    )
-    const adSetId = await createAdSet(metaCampaignId, `${brandProfile.product_name} - Ads`)
+    // --- Resumable: reuse existing Meta campaign or create new ---
+    let metaCampaignId = campaign.meta_campaign_id
+    if (!metaCampaignId) {
+      metaCampaignId = await createCampaignWithBudget(
+        `Stompads - ${brandProfile.product_name}`,
+        budgetInAccountCurrency,
+      )
+      await db.from('campaigns')
+        .update({ meta_campaign_id: metaCampaignId })
+        .eq('id', params.campaignId)
+    }
 
-    // Save Meta IDs
-    await serviceClient
-      .from('campaigns')
-      .update({ meta_campaign_id: metaCampaignId, meta_adset_id: adSetId })
-      .eq('id', params.campaignId)
+    // --- Resumable: reuse existing ad set or create new ---
+    let adSetId = campaign.meta_adset_id
+    if (!adSetId) {
+      adSetId = await createAdSet(metaCampaignId, `${brandProfile.product_name} - Ads`)
+      await db.from('campaigns')
+        .update({ meta_adset_id: adSetId })
+        .eq('id', params.campaignId)
+    }
 
-    // 2 ads in the single ad set
-    for (const ad of ads) {
+    // --- Resumable: skip ads that already have a meta_ad_id ---
+    for (const ad of allAds) {
       if (!ad.asset_url) continue
-      if (ad.meta_ad_id) continue // skip already pushed
+      if (ad.meta_ad_id) continue
 
       let creativeId: string
 
@@ -95,16 +101,23 @@ export async function POST(
         )
       }
 
-      const metaAdId = await createAd(adSetId, creativeId, `${brandProfile.product_name} - ${ad.type} ${ad.aspect_ratio}`)
+      // Save creative ID immediately — so retry doesn't recreate it
+      await db.from('ads')
+        .update({ meta_creative_id: creativeId })
+        .eq('id', ad.id)
 
-      await serviceClient
-        .from('ads')
-        .update({ meta_ad_id: metaAdId, meta_creative_id: creativeId, status: 'live' })
+      const metaAdId = await createAd(
+        adSetId, creativeId,
+        `${brandProfile.product_name} - ${ad.type} ${ad.aspect_ratio}`
+      )
+
+      // Save ad ID immediately
+      await db.from('ads')
+        .update({ meta_ad_id: metaAdId, status: 'live' })
         .eq('id', ad.id)
     }
 
-    await serviceClient
-      .from('campaigns')
+    await db.from('campaigns')
       .update({ status: 'live' })
       .eq('id', params.campaignId)
 

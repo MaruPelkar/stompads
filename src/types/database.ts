@@ -49,6 +49,8 @@ export interface Database {
           aspect_ratio: string | null
           placement: string | null
           status: 'generating' | 'ready' | 'live' | 'failed'
+          pipeline_step: 'video_generating' | 'video_ready' | 'subtitling' | 'subtitle_failed' | 'subtitled' | 'ready'
+          raw_asset_url: string | null
           prompt_used: string | null
           created_at: string
         }
