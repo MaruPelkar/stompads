@@ -121,35 +121,45 @@ export async function createVideoAdCreative(
   })
   const videoId = uploadData.id
 
-  // Step 2: Wait for video to be FULLY processed on Meta
-  // Poll until status.video_status === 'ready'
-  let videoReady = false
+  // Step 2: Wait for video to be FULLY processed, then get its thumbnail
+  let imageHash: string | null = null
   for (let attempt = 0; attempt < 40; attempt++) {
     await new Promise(r => setTimeout(r, 3000)) // 3s × 40 = up to 120s
     try {
-      const videoInfo = await metaFetch(`/${videoId}?fields=status`, 'GET')
+      const videoInfo = await metaFetch(`/${videoId}?fields=status,picture`, 'GET')
       const videoStatus = videoInfo?.status?.video_status
-      console.log(`[META] Video ${videoId} status: ${videoStatus} (attempt ${attempt + 1})`)
-      if (videoStatus === 'ready') {
-        videoReady = true
+      console.log(`[META] Video ${videoId} status: ${videoStatus} picture: ${!!videoInfo?.picture} (attempt ${attempt + 1})`)
+
+      // Only grab thumbnail once video is fully ready
+      if (videoStatus === 'ready' && videoInfo?.picture) {
+        // Download Meta's auto-generated thumbnail and upload as ad image
+        const thumbRes = await fetch(videoInfo.picture)
+        if (thumbRes.ok) {
+          const buffer = Buffer.from(await thumbRes.arrayBuffer())
+          const base64 = buffer.toString('base64')
+          const imgData = await metaFetch(`/${AD_ACCOUNT_ID}/adimages`, 'POST', { bytes: base64 })
+          const hashKey = Object.keys(imgData.images)[0]
+          imageHash = imgData.images[hashKey].hash
+        }
         break
       }
-    } catch {
-      // Keep trying
+    } catch (err) {
+      console.warn(`[META] Thumbnail poll attempt ${attempt + 1} failed:`, err instanceof Error ? err.message : err)
     }
   }
 
-  if (!videoReady) {
-    console.warn(`[META] Video ${videoId} not ready after 120s — creating creative anyway`)
+  if (!imageHash) {
+    throw new Error(`Could not get video thumbnail for ${videoId}. Video may still be processing — try Go Live again in a minute.`)
   }
 
-  // Step 3: Create creative — NO thumbnail fields, let Meta auto-assign from the processed video
+  // Step 3: Create creative with image_hash from the video's own first frame
   const data = await metaFetch(`/${AD_ACCOUNT_ID}/adcreatives`, 'POST', {
     name: `Stompads Video ${Date.now()}`,
     object_story_spec: {
       page_id: PAGE_ID,
       video_data: {
         video_id: videoId,
+        image_hash: imageHash,
         title: headline,
         message: primaryText,
         call_to_action: { type: 'LEARN_MORE', value: { link: websiteUrl } },
