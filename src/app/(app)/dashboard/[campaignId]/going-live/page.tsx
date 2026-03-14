@@ -71,33 +71,45 @@ export default function GoingLivePage({ params }: { params: { campaignId: string
   }, [params.campaignId, router])
 
   return (
-    <div className="text-center py-12">
+    <div className="text-center py-8">
+      {/* Rotating copy — top, big */}
+      {!done && !error && (
+        <p style={{
+          fontFamily: 'var(--font-body)', fontSize: '18px', color: 'var(--text)',
+          maxWidth: '400px', marginLeft: 'auto', marginRight: 'auto',
+          minHeight: '50px', lineHeight: 1.5, fontWeight: 500,
+          marginBottom: '8px',
+        }}>
+          {GO_LIVE_COPY[copyIndex]}
+        </p>
+      )}
+
       {/* Header */}
       {!done ? (
-        <h1 className="heading-xl">GOING <span style={{ color: 'var(--orange)' }}>LIVE</span></h1>
+        <h1 className="heading-lg" style={{ color: 'var(--text-muted)' }}>GOING <span style={{ color: 'var(--orange)' }}>LIVE</span></h1>
       ) : (
         <h1 className="heading-xl" style={{ color: 'var(--green)' }}>LIVE</h1>
       )}
 
-      {!done && <div className="spinner" style={{ margin: '24px auto' }} />}
+      {!done && <div className="spinner" style={{ margin: '20px auto' }} />}
 
       {done && (
         <p style={{
-          fontFamily: 'var(--font-display)', fontSize: '24px', color: 'var(--green)',
-          marginTop: '16px', letterSpacing: '1px',
+          fontFamily: 'var(--font-display)', fontSize: '22px', color: 'var(--green)',
+          marginTop: '12px', letterSpacing: '1px',
         }}>
           YOUR AD IS RUNNING
         </p>
       )}
 
       {/* Progress steps */}
-      <div style={{ maxWidth: '340px', margin: '24px auto 0', textAlign: 'left' }}>
+      <div style={{ maxWidth: '300px', margin: '20px auto 0', textAlign: 'left' }}>
         {GO_LIVE_STEPS.map((s, i) => (
-          <div key={s.key} className="flex items-center gap-3" style={{ padding: '7px 0' }}>
+          <div key={s.key} className="flex items-center gap-3" style={{ padding: '6px 0' }}>
             <div style={{
-              width: 20, height: 20, borderRadius: '50%', flexShrink: 0,
+              width: 18, height: 18, borderRadius: '50%', flexShrink: 0,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: '11px', fontWeight: 700,
+              fontSize: '10px', fontWeight: 700,
               background: (done || i < stepIndex) ? 'var(--green)' : i === stepIndex ? 'var(--orange)' : 'var(--input-bg)',
               color: (done || i <= stepIndex) ? '#fff' : 'var(--text-muted)',
               transition: 'all 400ms ease',
@@ -105,7 +117,7 @@ export default function GoingLivePage({ params }: { params: { campaignId: string
               {(done || i < stepIndex) ? '✓' : ''}
             </div>
             <span style={{
-              fontFamily: 'var(--font-mono)', fontSize: '12px', letterSpacing: '0.5px',
+              fontFamily: 'var(--font-mono)', fontSize: '11px', letterSpacing: '0.5px',
               color: (done || i <= stepIndex) ? 'var(--text)' : 'var(--text-muted)',
               fontWeight: (!done && i === stepIndex) ? 600 : 400,
               transition: 'all 400ms ease',
@@ -115,17 +127,6 @@ export default function GoingLivePage({ params }: { params: { campaignId: string
           </div>
         ))}
       </div>
-
-      {/* Rotating copy */}
-      {!done && !error && (
-        <p style={{
-          fontFamily: 'var(--font-body)', fontSize: '14px', color: 'var(--text-light)',
-          marginTop: '24px', maxWidth: '340px', marginLeft: 'auto', marginRight: 'auto',
-          minHeight: '42px', lineHeight: 1.5,
-        }}>
-          {GO_LIVE_COPY[copyIndex]}
-        </p>
-      )}
 
       {/* Error */}
       {error && (

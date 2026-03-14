@@ -212,17 +212,26 @@ function OnboardContent() {
       )}
 
       {step === 'generating' && (
-        <div className="text-center py-12">
-          <div className="spinner mb-6" />
+        <div className="text-center py-8">
+          {/* Rotating motivational copy — top, bigger */}
+          <p style={{
+            fontFamily: 'var(--font-body)', fontSize: '18px', color: 'var(--text)',
+            maxWidth: '400px', marginLeft: 'auto', marginRight: 'auto',
+            minHeight: '50px', lineHeight: 1.5, fontWeight: 500,
+          }}>
+            {WAIT_COPY[waitCopyIndex]}
+          </p>
+
+          <div className="spinner" style={{ margin: '24px auto' }} />
 
           {/* Progress steps */}
-          <div style={{ maxWidth: '320px', margin: '0 auto', textAlign: 'left' }}>
+          <div style={{ maxWidth: '300px', margin: '0 auto', textAlign: 'left' }}>
             {PROGRESS_STEPS.map((s, i) => (
-              <div key={s.key} className="flex items-center gap-3" style={{ padding: '8px 0' }}>
+              <div key={s.key} className="flex items-center gap-3" style={{ padding: '6px 0' }}>
                 <div style={{
-                  width: 20, height: 20, borderRadius: '50%', flexShrink: 0,
+                  width: 18, height: 18, borderRadius: '50%', flexShrink: 0,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: '11px', fontWeight: 700,
+                  fontSize: '10px', fontWeight: 700,
                   background: i < progressIndex ? 'var(--green)' : i === progressIndex ? 'var(--orange)' : 'var(--input-bg)',
                   color: i <= progressIndex ? '#fff' : 'var(--text-muted)',
                   transition: 'all 400ms ease',
@@ -230,7 +239,7 @@ function OnboardContent() {
                   {i < progressIndex ? '✓' : ''}
                 </div>
                 <span style={{
-                  fontFamily: 'var(--font-mono)', fontSize: '12px', letterSpacing: '0.5px',
+                  fontFamily: 'var(--font-mono)', fontSize: '11px', letterSpacing: '0.5px',
                   color: i <= progressIndex ? 'var(--text)' : 'var(--text-muted)',
                   fontWeight: i === progressIndex ? 600 : 400,
                   transition: 'all 400ms ease',
@@ -240,30 +249,43 @@ function OnboardContent() {
               </div>
             ))}
           </div>
-
-          {/* Rotating motivational copy */}
-          <p style={{
-            fontFamily: 'var(--font-body)', fontSize: '14px', color: 'var(--text-light)',
-            marginTop: '24px', maxWidth: '360px', marginLeft: 'auto', marginRight: 'auto',
-            minHeight: '42px', transition: 'opacity 300ms ease',
-            lineHeight: 1.5,
-          }}>
-            {WAIT_COPY[waitCopyIndex]}
-          </p>
         </div>
       )}
 
       {step === 'preview' && ads.length > 0 && (
-        <>
-          <AdPreview ads={ads} />
+        <div style={{ maxWidth: '400px', margin: '0 auto' }}>
+          {/* Compact video preview + budget in one view */}
+          <div className="text-center" style={{ marginBottom: '20px' }}>
+            <h2 className="heading-md">YOUR AD IS <span style={{ color: 'var(--orange)' }}>READY</span></h2>
+          </div>
+
+          {/* Small inline video */}
+          {(() => {
+            const videoAd = ads.find(a => a.type === 'video')
+            return videoAd?.asset_url ? (
+              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '24px' }}>
+                <div style={{
+                  borderRadius: '14px', overflow: 'hidden',
+                  border: '2px solid var(--text)', boxShadow: 'var(--shadow-lg)',
+                  background: '#000', width: '160px',
+                }}>
+                  <video src={videoAd.asset_url} controls playsInline
+                    style={{ width: '100%', aspectRatio: '9/16', objectFit: 'cover', display: 'block' }} />
+                </div>
+              </div>
+            ) : null
+          })()}
+
+          {/* Budget + Launch */}
           <BudgetForm onSubmit={handleBudgetSubmit} loading={false} />
+
           {isAdmin && (
             <button onClick={handleSkipPayment} className="btn-ghost w-full"
-              style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '-8px' }}>
+              style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '8px' }}>
               SKIP PAYMENT (ADMIN TEST)
             </button>
           )}
-        </>
+        </div>
       )}
 
       {step === 'checkout' && (
