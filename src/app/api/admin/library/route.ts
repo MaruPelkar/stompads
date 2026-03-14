@@ -30,10 +30,10 @@ export async function POST(request: NextRequest) {
   const notes = formData.get('notes') as string
   const file = formData.get('visual') as File | null
 
+  const serviceClient = await createServiceClient()
   let visualUrl: string | null = null
 
   if (file) {
-    const serviceClient = await createServiceClient()
     const fileName = `${Date.now()}-${file.name}`
     const { data: upload } = await serviceClient.storage
       .from('ad-library')
@@ -46,8 +46,6 @@ export async function POST(request: NextRequest) {
       visualUrl = publicUrl
     }
   }
-
-  const serviceClient = await createServiceClient()
   const { data, error } = await serviceClient
     .from('ad_library')
     .insert({ category, prompt, notes, visual_url: visualUrl })

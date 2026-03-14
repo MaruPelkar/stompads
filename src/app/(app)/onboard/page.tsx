@@ -61,7 +61,7 @@ function OnboardContent() {
     const supabase = createClient()
     supabase.auth.getUser().then(({ data: { user } }) => {
       // Quick admin check — the skip-payment API does the real auth server-side
-      if (user?.email && (user.email === 'nakul@vaaya.ai' || user.email.endsWith('@stompads.com'))) {
+      if (user?.email && user.email === process.env.NEXT_PUBLIC_ADMIN_EMAIL) {
         setIsAdmin(true)
       }
     })
@@ -109,6 +109,17 @@ function OnboardContent() {
       // Check if ad appeared
       if (adCount >= 1 && progressIndex < 4) {
         setProgressIndex(4) // "Burning in captions"
+      }
+
+      // Subtitle failed — redirect to campaign page which has retry UI
+      const hasSubtitleFailure = data.status === 'subtitle_failed' ||
+        data.ads?.some((a: Ad) => a.pipeline_step === 'subtitle_failed')
+      if (hasSubtitleFailure) {
+        if (pollingRef.current) clearInterval(pollingRef.current)
+        if (progressRef.current) clearInterval(progressRef.current)
+        if (waitCopyRef.current) clearInterval(waitCopyRef.current)
+        router.push(`/dashboard/${id}`)
+        return
       }
 
       if (data.status === 'ready' && adCount > 0) {

@@ -13,8 +13,8 @@ export async function POST(
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const { dailyBudgetCents } = await request.json()
-  if (!dailyBudgetCents || dailyBudgetCents < 500) {
-    return NextResponse.json({ error: 'Minimum daily budget is $5' }, { status: 400 })
+  if (!dailyBudgetCents || dailyBudgetCents < 1000) {
+    return NextResponse.json({ error: 'Minimum daily budget is $10' }, { status: 400 })
   }
 
   const serviceClient = await createServiceClient()

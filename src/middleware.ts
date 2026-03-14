@@ -34,8 +34,10 @@ export async function middleware(request: NextRequest) {
 
   if (user && (request.nextUrl.pathname === '/login' || request.nextUrl.pathname === '/signup')) {
     // If there's a redirect param (e.g. from landing page with URL), honor it
+    // Only allow relative paths to prevent open redirect attacks
     const redirect = request.nextUrl.searchParams.get('redirect')
-    return NextResponse.redirect(new URL(redirect || '/dashboard', request.url))
+    const safeRedirect = redirect && redirect.startsWith('/') && !redirect.startsWith('//') ? redirect : '/dashboard'
+    return NextResponse.redirect(new URL(safeRedirect, request.url))
   }
 
   return supabaseResponse

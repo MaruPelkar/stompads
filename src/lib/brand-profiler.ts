@@ -109,13 +109,9 @@ Your scripts are 40-50 words (12 seconds of natural speech). Every word earns it
 export async function generateVideoScripts(brandProfile: BrandProfile): Promise<{ script: string; setting: string }[]> {
   const trace = langfuse.trace({ name: 'generate-video-scripts' })
 
-  const shuffledSettings = [...VIDEO_SETTINGS].sort(() => Math.random() - 0.5).slice(0, 2)
-  const scripts: { script: string; setting: string }[] = []
+  const setting = VIDEO_SETTINGS[Math.floor(Math.random() * VIDEO_SETTINGS.length)]
 
-  for (let i = 0; i < 2; i++) {
-    const setting = shuffledSettings[i]
-
-    const prompt = `Write a 12-second UGC video ad script for this product. The person is ${setting}.
+  const prompt = `Write a 12-second UGC video ad script for this product. The person is ${setting}.
 
 PRODUCT: ${brandProfile.product_name}
 CATEGORY: ${brandProfile.category}
@@ -132,36 +128,33 @@ Requirements:
 - Exactly 40-50 words total
 - Sound like a real person, not a script
 
-${i === 0 ? 'Use a CURIOSITY/DISBELIEF hook style (e.g. "You would not believe what I just found..." or "Okay I need someone to explain why nobody told me about this...")' : 'Use an URGENCY/FOMO hook style (e.g. "This has got to be the biggest catch of 2026..." or "Stop scrolling because this is about to change everything...")'}
+Use a CURIOSITY/DISBELIEF hook style (e.g. "You would not believe what I just found..." or "Okay I need someone to explain why nobody told me about this...")
 
 Return ONLY the spoken words. No stage directions. No quotes. No brackets. Just what they say.`
 
-    const generation = trace.generation({
-      name: `claude-ugc-script-${i + 1}`,
-      model: 'claude-sonnet-4-6',
-      input: [{ role: 'system', content: UGC_COPYWRITER_SYSTEM }, { role: 'user', content: prompt }],
-    })
+  const generation = trace.generation({
+    name: 'claude-ugc-script',
+    model: 'claude-sonnet-4-6',
+    input: [{ role: 'system', content: UGC_COPYWRITER_SYSTEM }, { role: 'user', content: prompt }],
+  })
 
-    const message = await anthropic.messages.create({
-      model: 'claude-sonnet-4-6',
-      max_tokens: 256,
-      system: UGC_COPYWRITER_SYSTEM,
-      messages: [{ role: 'user', content: prompt }],
-    })
+  const message = await anthropic.messages.create({
+    model: 'claude-sonnet-4-6',
+    max_tokens: 256,
+    system: UGC_COPYWRITER_SYSTEM,
+    messages: [{ role: 'user', content: prompt }],
+  })
 
-    const script = message.content[0].type === 'text' ? message.content[0].text.trim() : ''
+  const script = message.content[0].type === 'text' ? message.content[0].text.trim() : ''
 
-    generation.end({
-      output: script,
-      usage: {
-        input: message.usage.input_tokens,
-        output: message.usage.output_tokens,
-      },
-    })
-
-    scripts.push({ script, setting })
-  }
+  generation.end({
+    output: script,
+    usage: {
+      input: message.usage.input_tokens,
+      output: message.usage.output_tokens,
+    },
+  })
 
   await langfuse.flushAsync()
-  return scripts
+  return [{ script, setting }]
 }

@@ -131,7 +131,7 @@ function sanitizePrompt(prompt: string, attempt: number): string {
 /**
  * Generate raw video. Retries up to 3 times with sanitized prompts on content policy violations.
  */
-async function generateRawVideo(
+export async function generateRawVideo(
   prompt: string,
   traceId?: string
 ): Promise<GeneratedAd> {
@@ -196,7 +196,7 @@ async function generateRawVideo(
 /**
  * Add auto-subtitles to a video
  */
-async function addSubtitles(
+export async function addSubtitles(
   videoUrl: string,
   traceId?: string
 ): Promise<string> {
@@ -214,8 +214,7 @@ async function addSubtitles(
     const config = await getAdConfig()
     const sub = config.subtitle
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const subtitleInput: any = {
+    const subtitleInput = {
       video_url: videoUrl,
       language: sub.language,
       font_name: sub.fontName,
@@ -232,7 +231,8 @@ async function addSubtitles(
       enable_animation: sub.enableAnimation,
     }
 
-    const result = await fal.subscribe(FAL_SUBTITLE_MODEL, { input: subtitleInput })
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const result = await fal.subscribe(FAL_SUBTITLE_MODEL, { input: subtitleInput as any })
     const data = result.data as FalSubtitleOutput
 
     const subtitledUrl = data?.video?.url
@@ -250,8 +250,7 @@ async function addSubtitles(
     const msg = err instanceof Error ? err.message : String(err)
     span.end({ output: { error: msg } })
     await langfuse.flushAsync()
-    console.warn(`[SUBTITLE_FAILED] Returning raw video. Error: ${msg}`)
-    return videoUrl
+    throw new Error(`Subtitle burning failed: ${msg}`)
   }
 }
 

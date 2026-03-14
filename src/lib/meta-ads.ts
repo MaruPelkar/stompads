@@ -194,4 +194,3 @@ export async function resumeCampaign(metaCampaignId: string): Promise<void> {
     status: 'ACTIVE',
   })
 }
-// 1773426751
