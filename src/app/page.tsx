@@ -1,5 +1,9 @@
 'use client'
 
+declare global {
+  interface Window { gtag?: (...args: unknown[]) => void }
+}
+
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
@@ -84,6 +88,14 @@ export default function LandingPage() {
   function handleLaunch() {
     setLaunching(true)
     const trimmed = url.trim()
+
+    // Fire GA event to track landing page intent
+    if (typeof window !== 'undefined' && typeof window.gtag === 'function') {
+      window.gtag('event', 'launch_click', {
+        url_entered: trimmed || '(empty)',
+        is_logged_in: isLoggedIn,
+      })
+    }
 
     if (trimmed) {
       const normalized = normalizeUrl(trimmed)
