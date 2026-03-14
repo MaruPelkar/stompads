@@ -4,7 +4,6 @@ import { Suspense, useState, useEffect, useRef, useCallback } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { UrlForm } from '@/components/onboard/UrlForm'
-import { AdPreview } from '@/components/onboard/AdPreview'
 import { BudgetForm } from '@/components/onboard/BudgetForm'
 import type { Ad } from '@/types/database'
 
